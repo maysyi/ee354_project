@@ -61,65 +61,83 @@ module ee354_project_length(Clk, SCEN, Reset, q_I, q_Run, q_Win, q_Lose, In_Dirn
 
     // OUTPUT
     output reg [7:0] Length;
-    output reg [255:0] Cell_Snake;
+    output reg [7:0] Cell_Snake [0:224]; // 225 registers to store coordinates for each snake part (1111 1111 means snake part does not exist yet)
     output reg [3:0] Head_X;
     output reg [3:0] Head_Y;
-    output reg [3:0] Next_Head_X;
-    output reg [3:0] Next_Head_Y
+    output reg [3:0] Tail_X;
+    output reg [3:0] Tail_Y;
     output reg New_Apple;
 
     // LOCAL VARIABLES
-    reg [3:0] Tail_X;
-    reg [3:0] Tail_Y;
+    reg [7:0] Head_Ptr; // Points to NEXT head in circular buffer
+    reg [7:0] Tail_Ptr; // Points to NEXT tail in circular buffer
+    reg [3:0] Curr_Dirn;
 
-    // Update Head
+    // Update Head and Tail
     always @(posedge Clk, posedge Reset) 
     begin
         if (Reset)
             begin
-                Head_X <= 4'd8;
-                Head_Y <= 4'd8;
-                Next_Head_X <= 4'd9;
-                Next_Head_Y <= 4'd9;
-                Length <= 2;
-                Cell_Snake <= 0;
-                Cell_Snake[8*16 + 8] <= 1;
-                Tail_X <= 4'd8;
-                Tail_Y <= 4'd7;
-                Cell_Snake[8*16 + 7] <= 1;
+                Cell_Snake[0] <= 8'h86 // Tail at (8, 6)
+                Cell_Snake[1] <= 8'h87
+                Cell_Snake[2] <= 8'h88 // Head at (8, 8)
+                for (i = 3; i < 225; i = i + 1)
+                    Cell_Snake[i] <= 8'hFF;
+                Head_X <= 4'h8;
+                Head_Y <= 4'h8;
+                Tail_X <= 4'h8;
+                Tail_Y <= 4'h6;
+                Head_Ptr <= 8'h02; // Points to current head at index 2
+                Tail_Ptr <= 8'h00; // Points to current tail at index 0
+                Length <= 8'h03;
                 New_Apple <= 0;
+                Current_Dirn <= 2'b00; // Start moving up first
             end
-        else if (SCEN && q_Run) // Need to add conditional state requirement
+        else if (q_Run) // Need to add conditional state requirement
             begin
-                // Update head based on input
-                Tail_X <= Head_X;
-                Tail_Y <= Head_Y;
-                Head_X <= Next_Head_X;
-                Head_Y <= Next_Head_Y;
-                case (In_Dirn)
+                if (SCEN) // When button pressed
+                    // Update current direction
+                    Current_Dirn <= In_Dirn
+                
+                // Update next location of head (note blocking assignment)
+                case (Current_Dirn)
                     2'b00: // UP
-                        Next_Head_Y <= Head_Y + 1;
+                        Next_Head_Y = Head_Y + 4'h1;
                     2'b01: // DOWN
-                        Next_Head_Y <= Head_Y - 1; 
+                        Next_Head_Y = Head_Y - 4'h1; 
                     2'b10: // LEFT
-                        Next_Head_X <= Head_X - 1; 
+                        Next_Head_X = Head_X - 4'h1; 
                     2'b11: // RIGHT
-                        Next_Head_X <= Head_X + 1; 
+                        Next_Head_X = Head_X + 4'h1; 
                 endcase
 
-                // Handle tail
-                if ((Head_X == Apple_X) && (Head_Y == Apple_Y))
-                    begin
-                        Cell_Snake[Head_X*16 + Head_Y] <= 1;
-                        New_Apple <= 1;
-                        Length <= Length + 1;
-                    end
-                else
-                    begin
-                        Cell_Snake[Head_X*16 + Head_Y] <= 1;
-                        Cell_Snake[Tail_X*16 + Tail_Y] <= 0;
-                        New_Apple <= 0;
-                    end
+                // If apple eaten (add head but don't remove tail)
+                if ((Next_Head_X == Apple_X) && (Next_Head_Y == Apple_Y))
+                begin
+                    Head_Ptr <= (Head_Ptr + 8'h01) % 225; // Loops back to 0 when exceeds 225
+                    Cell_Snake[(Head_Ptr + 8'h01) % 225] <= {Next_Head_X, Next_Head_Y};
+                    Head_X <= Next_Head_X;
+                    Head_Y <= Next_Head_Y;
+                    Length <= Length + 8'h01;
+                    New_Apple <= 1;
+                end
+                // If apple not eaten (just continue moving)
+                else 
+                begin
+                    Head_Ptr <= (Head_Ptr + 8'h01) % 225; // Loops back to 0 when exceeds 225
+                    Cell_Snake[(Head_Ptr + 8'h01) % 225] <= {Next_Head_X, Next_Head_Y};
+                    Head_X <= Next_Head_X;
+                    Head_Y <= Next_Head_Y;
+                    Tail_Ptr <= (Tail_Ptr + 8'h01) % 225;
+                    Cell_Snake[Tail_Ptr] <= 8'hFF; // Mark old tail as empty
+                    Tail_X <= Cell_Snake[(Tail_Ptr + 8'h01) % 225][7:4]; // Extract X from new tail
+                    Tail_Y <= Cell_Snake[(Tail_Ptr + 8'h01) % 225][3:0]; // Extract Y from new tail 
+                    New_Apple <= 0;                   
+                end
+
+                // If collide with body
+
+                // If collide with wall
             end
     end    
 

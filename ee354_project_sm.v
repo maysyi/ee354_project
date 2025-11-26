@@ -3,8 +3,7 @@
 // Description: Modified significantly from template file, to execute Snake game. This file contains the NSL and SM
 //////////////////////////////////////////////////////////////////////////////////
 
-// QUESTIONS:
-// How to check where TAIL is supposed to be?
+// Add coordinates for each snake part (up to 255)
 
 // State machine module
 module ee354_project_sm(Clk, SCEN, Reset, Ack, Next_Head_X, Next_Head_Y, Length, Cell_Snake, q_I, q_Run, q_Lose, q_Win);
