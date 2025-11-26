@@ -50,10 +50,10 @@ module ee354_project_apples(Clk, SCEN, Reset, Cell_Snake, New_Apple, Apple_X, Ap
 endmodule
 
 // Module to update length and position of snake head and tail
-module ee354_project_length(Clk, SCEN, Reset, q_I, q_Run, q_Win, q_Lose, In_Dirn, Head_X, Head_Y, Apple_X, Apple_Y, Length, Cell_Snake);
+module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lose, In_Dirn, Head_X, Head_Y, Apple_X, Apple_Y, Length, Cell_Snake);
 
     // INPUTS
-    input Clk, SCEN, Reset;
+    input Clk, SCEN, Reset, Speed_Clk; // Speed_Clk need to generate in top file (the speed/intervals at which the snake moves)
     input q_I, q_Run, q_Win, q_Lose;
     input [1:0] In_Dirn; // Encoded "state" assignment. This tells us which button is pushed. Data from top file
     input [3:0] Apple_X;
@@ -67,6 +67,7 @@ module ee354_project_length(Clk, SCEN, Reset, q_I, q_Run, q_Win, q_Lose, In_Dirn
     output reg [3:0] Tail_X;
     output reg [3:0] Tail_Y;
     output reg New_Apple;
+    output reg Collision;
 
     // LOCAL VARIABLES
     reg [7:0] Head_Ptr; // Points to NEXT head in circular buffer
@@ -91,6 +92,7 @@ module ee354_project_length(Clk, SCEN, Reset, q_I, q_Run, q_Win, q_Lose, In_Dirn
                 Tail_Ptr <= 8'h00; // Points to current tail at index 0
                 Length <= 8'h03;
                 New_Apple <= 0;
+                Collision <= 0;
                 Current_Dirn <= 2'b00; // Start moving up first
             end
         else if (q_Run) // Need to add conditional state requirement
@@ -99,45 +101,57 @@ module ee354_project_length(Clk, SCEN, Reset, q_I, q_Run, q_Win, q_Lose, In_Dirn
                     // Update current direction
                     Current_Dirn <= In_Dirn
                 
-                // Update next location of head (note blocking assignment)
-                case (Current_Dirn)
-                    2'b00: // UP
-                        Next_Head_Y = Head_Y + 4'h1;
-                    2'b01: // DOWN
-                        Next_Head_Y = Head_Y - 4'h1; 
-                    2'b10: // LEFT
-                        Next_Head_X = Head_X - 4'h1; 
-                    2'b11: // RIGHT
-                        Next_Head_X = Head_X + 4'h1; 
-                endcase
-
-                // If apple eaten (add head but don't remove tail)
-                if ((Next_Head_X == Apple_X) && (Next_Head_Y == Apple_Y))
+                if (Speed_Clk)
                 begin
-                    Head_Ptr <= (Head_Ptr + 8'h01) % 225; // Loops back to 0 when exceeds 225
-                    Cell_Snake[(Head_Ptr + 8'h01) % 225] <= {Next_Head_X, Next_Head_Y};
-                    Head_X <= Next_Head_X;
-                    Head_Y <= Next_Head_Y;
-                    Length <= Length + 8'h01;
-                    New_Apple <= 1;
-                end
-                // If apple not eaten (just continue moving)
-                else 
-                begin
-                    Head_Ptr <= (Head_Ptr + 8'h01) % 225; // Loops back to 0 when exceeds 225
-                    Cell_Snake[(Head_Ptr + 8'h01) % 225] <= {Next_Head_X, Next_Head_Y};
-                    Head_X <= Next_Head_X;
-                    Head_Y <= Next_Head_Y;
-                    Tail_Ptr <= (Tail_Ptr + 8'h01) % 225;
-                    Cell_Snake[Tail_Ptr] <= 8'hFF; // Mark old tail as empty
-                    Tail_X <= Cell_Snake[(Tail_Ptr + 8'h01) % 225][7:4]; // Extract X from new tail
-                    Tail_Y <= Cell_Snake[(Tail_Ptr + 8'h01) % 225][3:0]; // Extract Y from new tail 
-                    New_Apple <= 0;                   
-                end
+                    // Update next location of head (note blocking assignment)
+                    case (Current_Dirn)
+                        2'b00: // UP
+                            Next_Head_Y = Head_Y + 4'h1;
+                        2'b01: // DOWN
+                            Next_Head_Y = Head_Y - 4'h1; 
+                        2'b10: // LEFT
+                            Next_Head_X = Head_X - 4'h1; 
+                        2'b11: // RIGHT
+                            Next_Head_X = Head_X + 4'h1; 
+                    endcase
 
-                // If collide with body
+                    // If apple eaten (add head but don't remove tail)
+                    if ((Next_Head_X == Apple_X) && (Next_Head_Y == Apple_Y))
+                    begin
+                        Head_Ptr <= (Head_Ptr + 8'h01) % 225; // Loops back to 0 when exceeds 225
+                        Cell_Snake[(Head_Ptr + 8'h01) % 225] <= {Next_Head_X, Next_Head_Y};
+                        Head_X <= Next_Head_X;
+                        Head_Y <= Next_Head_Y;
+                        Length <= Length + 8'h01;
+                        New_Apple <= 1;
+                    end
+                    // If apple not eaten (just continue moving)
+                    else 
+                    begin
+                        Head_Ptr <= (Head_Ptr + 8'h01) % 225; // Loops back to 0 when exceeds 225
+                        Cell_Snake[(Head_Ptr + 8'h01) % 225] <= {Next_Head_X, Next_Head_Y};
+                        Head_X <= Next_Head_X;
+                        Head_Y <= Next_Head_Y;
+                        Tail_Ptr <= (Tail_Ptr + 8'h01) % 225;
+                        Cell_Snake[Tail_Ptr] <= 8'hFF; // Mark old tail as empty
+                        Tail_X <= Cell_Snake[(Tail_Ptr + 8'h01) % 225][7:4]; // Extract X from new tail
+                        Tail_Y <= Cell_Snake[(Tail_Ptr + 8'h01) % 225][3:0]; // Extract Y from new tail 
+                        New_Apple <= 0;                   
+                    end
 
-                // If collide with wall
+                    // Check for wall or body collision
+                    if ((Next_Head_X > 4'hE) || (Next_Head_Y > 4'hE))
+                        Collision <= 1;
+                    else
+                        for (i=0; i<225; i=i+1)
+                        begin
+                            if (Cell_Snake[i] != 8'hFF) // If this segment exists
+                            begin
+                                if ((Cell_Snake[i][7:4] == Next_Head_X) && (Cell_Snake[i][3:0] == Next_Head_Y))
+                                    Collision = 1;
+                            end
+                        end
+                end
             end
     end    
 
