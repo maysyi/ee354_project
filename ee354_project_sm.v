@@ -6,14 +6,12 @@
 // Add coordinates for each snake part (up to 255)
 
 // State machine module
-module ee354_project_sm(Clk, SCEN, Reset, Ack, Next_Head_X, Next_Head_Y, Length, Cell_Snake, q_I, q_Run, q_Lose, q_Win);
+module ee354_project_sm(Clk, SCEN, Reset, Ack, Collision, Length, Cell_Snake, q_I, q_Run, q_Lose, q_Win);
 
 	// INPUTS
-	input	Clk, SCEN, Reset, Ack;
-	input [3:0] Next_Head_X;
-    input [3:0] Next_Head_Y;
+	input Clk, SCEN, Reset, Ack;
+    input Collision;
     input [7:0] Length;
-    input [255:0] Cell_Snake;
 
 	// OUTPUTS
 	output q_I, q_Run, q_Lose, q_Win; // States
@@ -36,18 +34,24 @@ module ee354_project_sm(Clk, SCEN, Reset, Ack, Next_Head_X, Next_Head_Y, Length,
                 I:
                     state <= RUN;	
                 RUN:
-                    if (Cell_Snake[Next_Head_X*16 + Next_Head_Y] == 1) // Snake bit itself (Head is at a position on the grid that is not empty - aka marked as 1 already)
+                    if (Collision)
                         state <= LOSE;
-                    else if (Length == 255)
+                    else if (Length == 8'd225)
                         state <= WIN;
+                    else
+                        state <= RUN;
                 LOSE:
                     // State transfers
                     if (Ack)
                         state <= I;
+                    else
+                        state <= LOSE;
                 WIN:
                     // State transfers
                     if (Ack)
                         state <= I;
+                    else 
+                        state <= WIN;
                 default:		
                     state <= UNK;
             endcase
