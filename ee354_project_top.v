@@ -3,7 +3,7 @@
 // Description: Modified significantly from template file to instantiate FPGA.
 //////////////////////////////////////////////////////////////////////////////////
 
-// Checked up until line 94
+// Clock division segment not done.
 
 module ee354_project_top(
 	ClkPort,                           // the 100 MHz incoming clock signal	
@@ -148,7 +148,7 @@ module ee354_project_top(
         .Apple_Y(Apple_Y)
     );
 	
-//------------
+//------------ CLOCK DIVISION SEGMENT IS UNEDITED
 // CLOCK DIVISION
 
 	// The clock division circuitary works like this:
