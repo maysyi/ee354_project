@@ -4,11 +4,11 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 // Module to generate apple
-module ee354_project_apples(Clk, SCEN, Reset, Cell_Snake, New_Apple, Apple_X, Apple_Y);
+module ee354_project_apples(Clk, SCEN, Reset, Cell_Snake_Vector, New_Apple, Apple_X, Apple_Y);
 
     // INPUTS
     input Clk, SCEN, Reset;
-    input [255:0] Cell_Snake; // Presence of snake body taken from another module (probably Length)
+    input [224:0] Cell_Snake_Vector; // Presence of snake body taken from another module (probably Length)
     input New_Apple; // Request for new apple from another module (probably Length)
 
     // OUTPUT
@@ -28,10 +28,10 @@ module ee354_project_apples(Clk, SCEN, Reset, Cell_Snake, New_Apple, Apple_X, Ap
                 end
         end
     
-    wire [3:0] LFSR_X = LFSR[7:4] % 16;
-    wire [3:0] LFSR_Y = LFSR[3:0] % 16;
+    wire [3:0] LFSR_X = LFSR[7:4] % 15;
+    wire [3:0] LFSR_Y = LFSR[3:0] % 15;
 
-    wire Cell_Check = Cell_Snake[LFSR_X*16 + LFSR_Y]; // Checks if generated apple location is where snake is
+    wire Cell_Check = Cell_Snake_Vector[LFSR_X*15 + LFSR_Y]; // Checks if generated apple location is where snake is
 
     always @ (posedge Clk)
     begin

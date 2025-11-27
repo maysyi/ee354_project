@@ -5,18 +5,17 @@
 
 // Checked up until line 94
 
-module ee354_project_top
-		(//MemOE, MemWR, RamCS, 
-		QuadSpiFlashCS, // Disable the three memory chips
-        ClkPort,                           // the 100 MHz incoming clock signal	
-		BtnL, BtnU, BtnD, BtnR,            // the Left, Up, Down, and the Right buttons (Direction buttons)
-		BtnC,                              // the Center button (Reset)
-		// Sw7, Sw6, Sw5, Sw4, Sw3, Sw2, Sw1, Sw0, // 8 switches (that we are not using)
-		Ld7, Ld6, Ld5, Ld4, Ld3, Ld2, Ld1, Ld0, // 8 LEDs (that we will use to show states. Only 7 will be used since we only have 7 states)
-		An7, An6, An5, An4, An3, An2, An1, An0,	// 8 anodes (for SSD to show apple count. Probably won't need all.)
-		Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes (for SSD to show apple count)
-		Dp                                 // Dot Point Cathode on SSDs (will be disabling in code later)
-	  );
+module ee354_project_top(
+	ClkPort,                           // the 100 MHz incoming clock signal	
+	BtnL, BtnU, BtnD, BtnR,            // the Left, Up, Down, and the Right buttons (Direction buttons)
+	BtnC,                              // the Center button (Reset)
+	// Sw7, Sw6, Sw5, Sw4, Sw3, Sw2, Sw1, Sw0, // 8 switches (that we are not using)
+	// Ld7, Ld6, Ld5, Ld4,
+	Ld3, Ld2, Ld1, Ld0, // 8 LEDs (that we will use to show states. Only 4 will be used since we only have 4 states)
+	An7, An6, An5, An4, An3, An2, An1, An0,	// 8 anodes (for SSD to show apple count. Probably won't need all.)
+	Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes (for SSD to show apple count)
+	Dp                                 // Dot Point Cathode on SSDs (will be disabling in code later)
+);
 
 	//  INPUTS
 	// Clock & Reset I/O
@@ -25,12 +24,9 @@ module ee354_project_top
 	input BtnL, BtnU, BtnD, BtnR, BtnC;	
 	
 	//  OUTPUTS
-	// Control signals on Memory chips 	(to disable them)
-	//output 	MemOE, MemWR, RamCS, 
-	output QuadSpiFlashCS;
 	// Project Specific Outputs
 	// LEDs
-	output 	Ld0, Ld1, Ld2, Ld3, Ld4, Ld5, Ld6, Ld7;
+	output 	Ld0, Ld1, Ld2, Ld3;
 	// SSD Outputs
 	output 	Cg, Cf, Ce, Cd, Cc, Cb, Ca, Dp;
 	output 	An0, An1, An2, An3;	
@@ -42,16 +38,115 @@ module ee354_project_top
 	wire [1:0] 	ssdscan_clk;
 	reg [26:0]	DIV_CLK;
 	
-	wire Start_Ack_Pulse;
-	wire CEN_Pulse, BtnU_Pulse, BtnD_Pulse, BtnL_Pulse, BtnR_Pulse;
-	wire q_Win, q_Lose, q_Right, q_Left, q_Down, q_Up, q_I;
-	reg [7:0]	SSD; // One-hot state assignment for which SSD to use
-	wire [7:0]	SSD7, SSD6, SSD5, SSD4, SSD3, SSD2, SSD1, SSD0; // (Probably won't use all 7 in the end)
-	reg [7:0]  SSD_CATHODES;
-	
-//------------	
-// Disable the three memories so that they do not interfere with the rest of the design.
-	assign {MemOE, MemWR, RamCS, QuadSpiFlashCS} = 4'b1111;
+	// Debouncing modules
+	wire BtnU_SCEN, BtnD_SCEN, BtnL_SCEN, BtnR_SCEN, BtnC_SCEN;
+
+    ee354_debouncer #(.N_dc(28)) debounce_U (
+        .CLK(Clk), .RESET(Reset), .PB(BtnU),
+        .DPB(), .SCEN(BtnU_SCEN), .MCEN(), .CCEN()
+    );
+    
+    ee354_debouncer #(.N_dc(28)) debounce_D (
+        .CLK(Clk), .RESET(Reset), .PB(BtnD),
+        .DPB(), .SCEN(BtnD_SCEN), .MCEN(), .CCEN()
+    );
+    
+    ee354_debouncer #(.N_dc(28)) debounce_L (
+        .CLK(Clk), .RESET(Reset), .PB(BtnL),
+        .DPB(), .SCEN(BtnL_SCEN), .MCEN(), .CCEN()
+    );
+    
+    ee354_debouncer #(.N_dc(28)) debounce_R (
+        .CLK(Clk), .RESET(Reset), .PB(BtnR),
+        .DPB(), .SCEN(BtnR_SCEN), .MCEN(), .CCEN()
+    );
+    
+    ee354_debouncer #(.N_dc(28)) debounce_C (
+        .CLK(Clk), .RESET(Reset), .PB(BtnC),
+        .DPB(), .SCEN(BtnC_SCEN), .MCEN(), .CCEN()
+    );
+
+	// Assigning directions
+	wire [1:0] In_Dirn;
+    wire SCEN_dir; // Combined SCEN for any direction button
+    
+    assign SCEN_dir = SCEN_U | SCEN_D | SCEN_L | SCEN_R;
+    
+    assign In_Dirn = SCEN_U ? 2'b00 :  // UP
+                     SCEN_D ? 2'b01 :  // DOWN
+                     SCEN_L ? 2'b10 :  // LEFT
+                     SCEN_R ? 2'b11 :  // RIGHT
+                     2'b00;            // Default UP
+
+	// State machine module
+	wire q_Win, q_Lose, q_Run, q_I;
+    wire Collision;
+    wire [7:0] Length;
+    ee354_project_sm state_machine (
+        .Clk(Clk),
+        .Reset(Reset),
+        .Ack(BtnC_SCEN),
+        .Collision(Collision),
+        .Length(Length),
+        .q_I(q_I),
+        .q_Run(q_Run),
+        .q_Lose(q_Lose),
+        .q_Win(q_Win)
+    );
+
+	// Length and head/tail position
+	wire [3:0] Head_X, Head_Y;
+    wire [3:0] Tail_X, Tail_Y;
+    wire [3:0] Apple_X, Apple_Y;
+    wire New_Apple;
+    wire [7:0] Cell_Snake [0:224];
+    
+    ee354_project_length snake_length (
+        .Clk(Clk),
+        .SCEN(SCEN_dir),
+        .Reset(Reset),
+        .Speed_Clk(Speed_Clk),
+        .q_I(q_I),
+        .q_Run(q_Run),
+        .q_Win(q_Win),
+        .q_Lose(q_Lose),
+        .In_Dirn(In_Dirn),
+        .Head_X(Head_X),
+        .Head_Y(Head_Y),
+        .Apple_X(Apple_X),
+        .Apple_Y(Apple_Y),
+        .Length(Length),
+        .Cell_Snake(Cell_Snake),
+        .Tail_X(Tail_X),
+        .Tail_Y(Tail_Y),
+        .New_Apple(New_Apple),
+        .Collision(Collision)
+    );
+
+	// Apple generation
+    wire [224:0] Cell_Snake_Vector;
+    integer idx;
+    // Create a grid representation (15x15 = 225 cells)
+    reg [224:0] Grid;
+    always @(*) begin
+        Grid = 224'd0;  // Clear grid
+        for (idx = 0; idx < 225; idx = idx + 1) begin
+            if (Cell_Snake[idx] != 8'hFF) begin
+                // Set bit at position [X*16 + Y]
+                Grid[Cell_Snake[idx][7:4] * 15 + Cell_Snake[idx][3:0]] = 1'b1;
+            end
+        end
+    end
+    assign Cell_Snake_Vector = Grid;
+    ee354_project_apples apple_gen (
+        .Clk(Clk),
+        .SCEN(SCEN_dir),
+        .Reset(Reset),
+        .Cell_Snake_Vector(Cell_Snake_Vector),
+        .New_Apple(New_Apple),
+        .Apple_X(Apple_X),
+        .Apple_Y(Apple_Y)
+    );
 	
 //------------
 // CLOCK DIVISION
@@ -87,104 +182,30 @@ module ee354_project_top
 	assign	sys_clk = board_clk;
 	// assign	sys_clk = DIV_CLK[25];
 
-//------------
-// INPUT: SWITCHES & BUTTONS
-	// BtnL is used as both Start and Acknowledge. 
-	// To make this possible, we need a single clock producing  circuit.
-
-ee354_debouncer #(.N_dc(28)) ee354_debouncer_2 
-        (.CLK(sys_clk), .RESET(Reset), .PB(BtnL), .DPB( ), 
-		.SCEN(Start_Ack_Pulse), .MCEN( ), .CCEN( ));
-		 		 
-		 // BtnR is used to generate in_AB_Pulse to record the values of 
-		 // the inputs A and B as set on the switches.
-		 // BtnU is used as CEN_Pulse to allow single-stepping
-	assign {in_AB_Pulse, CEN_Pulse} = {BtnR_Pulse, BtnU_Pulse};
-
-ee354_debouncer #(.N_dc(28)) ee354_debouncer_1 
-        (.CLK(sys_clk), .RESET(Reset), .PB(BtnR), .DPB( ), 
-		.SCEN(BtnR_Pulse), .MCEN( ), .CCEN( ));
-
-ee354_debouncer #(.N_dc(28)) ee354_debouncer_0
-        (.CLK(sys_clk), .RESET(Reset), .PB(BtnU), .DPB( ), 
-		.SCEN(BtnU_Pulse), .MCEN( ), .CCEN( )); // to produce BtnU_Pulse from BtnU
-		
-//------------
-// DESIGN
-	// On two pushes of BtnR, numbers A and B are recorded in Ain and Bin
-    // (registers of the TOP) respectively
-	always @ (posedge sys_clk, posedge Reset)
-	begin
-		if(Reset)
-		 begin			// ****** TODO  in Part 2 ******
-			Ain <=  8'b00000000;  	// Is it necessary or desirable to initiate
-			Bin <=  8'b00000000;	//  Ain and Bin to zero? 
-			// When you download the TA's .bit file or when you reset the Nexys-2 
-			// do you see "0000" on the SSDs or some random combination?
-			// When you go from DONE state to INITIAL state after working on a set
-			// Ain and Bin, do you see "0000" again in the INITIAL state?
-			// If not, what do you see?
-			
-			A_bar_slash_B <= 0;
-		end
-		else
-		begin
-			if (in_AB_Pulse)  	// Note: in_AB_Pulse is same as BtnR_Pulse.
-								// ****** TODO  in Part 2 ******
-								// Complete the lines below so that you deposit the value on switches
-								// either in Ain or in Bin based on the value of the flag A_bar_slash_B. 
-								// Also you need to toggle the value of the flag A_bar_slash_B.
-				begin
-					A_bar_slash_B <= ~ A_bar_slash_B;  	// should this line be "before" (as shown) 
-														// or "after" the "if" statement?
-														// Please discuss with your TA.
-														// Recall aspects of the non-blocking assignment, and how delta-T 
-														// avoids race condition in real (physical) registers operation
-					if (!A_bar_slash_B)  // complete this line
-						Ain <= {Sw7, Sw6, Sw5, Sw4, Sw3, Sw2, Sw1, Sw0};
-					else
-						Bin <= {Sw7, Sw6, Sw5, Sw4, Sw3, Sw2, Sw1, Sw0}; // complete this line
-				end
-		end
-	end
+	// Indicate current state on LEDs.
+	assign {Ld3, Ld2, Ld1, Ld0} = {q_I, q_Run, q_Lose, q_Win};
 	
-	// the state machine module
-	ee354_GCD ee354_GCD_1(.Clk(sys_clk), .SCEN(CEN_Pulse), .Reset(Reset), .Start(Start_Ack_Pulse), .Ack(Start_Ack_Pulse), 
-						  .Ain(Ain), .Bin(Bin), .A(A), .B(B), .AB_GCD(AB_GCD), .i_count(i_count),
-						  .q_I(q_I), .q_Sub(q_Sub), .q_Mult(q_Mult), .q_Done(q_Done));
-
-//------------
-// OUTPUT: LEDS
+	// Display length on SSD
+	reg [3:0]	SSD; // One-hot state assignment for which SSD to use
+	wire [3:0]	SSD3, SSD2, SSD1, SSD0; // To display up to 225
+	reg [7:0]  SSD_CATHODES;
 	
-	assign {Ld7, Ld6, Ld5, Ld4} = {q_I, q_Sub, q_Mult, q_Done};
-	assign {Ld3, Ld2, Ld1, Ld0} = {BtnL, BtnU, BtnR, BtnD}; // Reset is driven by BtnC
-	// Here
-	// BtnL = Start/Ack
-	// BtnU = Single-Step
-	// BtnR = in_A_in_B
-	// BtnD = not used here
-	
-//------------
-// SSD (Seven Segment Display)
-	
-	//SSDs show Ain and Bin in initial state, A and B in subtract state, and GCD and i_count in multiply and done states.
-	// ****** TODO  in Part 2 ******
-	// assign y = s ? i1 : i0;  // an example of a 2-to-1 mux coding
-	// assign y = s1 ? (s0 ? i3: i2): (s0 ? i1: i0); // an example of a 4-to-1 mux coding
-	assign SSD3 = (q_Mult | q_Done) ? AB_GCD[7:4]  : q_I ? Ain[7:4] : A[7:4];
-	assign SSD2 = (q_Mult | q_Done) ? AB_GCD[3:0]  : q_I ? Ain[3:0] : A[3:0];
-	assign SSD1 = (q_Mult | q_Done) ? i_count[7:4]  : q_I ? Bin[7:4] : B[7:4];
-	assign SSD0 = (q_Mult | q_Done) ? i_count[3:0]  : q_I ? Bin[3:0] : B[3:0];
+	wire [7:0] hundreds, tens, ones;
+	assign hundreds = Length / 100;           // Hundreds digit (0-2)
+	assign tens = (Length / 10) % 10;         // Tens digit (0-9)
+	assign ones = Length % 10;                // Ones digit (0-9)
+	assign SSD3 = 4'd0;                       // Always 0 (leftmost digit unused)
+	assign SSD2 = q_I ? 4'd0 : hundreds[3:0]; // Hundreds place - use 4 bits
+	assign SSD1 = q_I ? 4'd0 : tens[3:0];     // Tens place - use 4 bits
+	assign SSD0 = q_I ? 4'd3 : ones[3:0];     // Ones place - use 4 bits (show "3" initially for starting length)
 
-
-	// need a scan clk for the seven segment display 
+	// Need a scan clk for the seven segment display 
 	// 191Hz (100 MHz / 2^19) works well
 	// 100 MHz / 2^18 = 381.5 cycles/sec ==> frequency of DIV_CLK[17]
 	// 100 MHz / 2^19 = 190.7 cycles/sec ==> frequency of DIV_CLK[18]
 	// 100 MHz / 2^20 =  95.4 cycles/sec ==> frequency of DIV_CLK[19]
 	
 	// 381.5 cycles/sec (2.62 ms per digit) [which means all 4 digits are lit once every 10.5 ms (reciprocal of 95.4 cycles/sec)] works well.
-	
 	//                  --|  |--|  |--|  |--|  |--|  |--|  |--|  |--|  |   
     //                    |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
 	//  DIV_CLK[17]       |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|
@@ -204,36 +225,31 @@ ee354_debouncer #(.N_dc(28)) ee354_debouncer_0
 	assign An2	= !(~(ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 01
 	assign An1	=  !((ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 10
 	assign An0	=  !((ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 11
-	// close another four anodes
+	// Close another four anodes
 	assign An7 = 1'b1;
 	assign An6 = 1'b1;
 	assign An5 = 1'b1;
 	assign An4 = 1'b1;
 	
-	
 	always @ (ssdscan_clk, SSD0, SSD1, SSD2, SSD3)
 	begin : SSD_SCAN_OUT
 		case (ssdscan_clk) 
-				  2'b00: SSD = SSD3;	// ****** TODO  in Part 2 ******
-				  2'b01: SSD = SSD2;  	// Complete the four lines
-				  
+				  2'b00: SSD = SSD3;
+				  2'b01: SSD = SSD2; 
 				  2'b10: SSD = SSD1;
 				  2'b11: SSD = SSD0;
 		endcase 
 	end
 	
-	// and finally convert SSD_num to ssd
-	// We convert the output of our 4-bit 4x1 mux
+	// Convert SSD number to ssd
+	// We convert the output of our 4-bit 3x1 mux
 
 	assign {Ca, Cb, Cc, Cd, Ce, Cf, Cg, Dp} = {SSD_CATHODES};
 
 	// Following is Hex-to-SSD conversion
 	always @ (SSD) 
 	begin : HEX_TO_SSD
-		case (SSD) // in this solution file the dot points are made to glow by making Dp = 0
-		    //                                                                abcdefg,Dp
-			// ****** TODO  in Part 2 ******
-			// Revise the code below so that the dot points do not glow for your design.
+		case (SSD)
 			4'b0000: SSD_CATHODES = 8'b00000011; // 0
 			4'b0001: SSD_CATHODES = 8'b10011111; // 1
 			4'b0010: SSD_CATHODES = 8'b00100101; // 2
