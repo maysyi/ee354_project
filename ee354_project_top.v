@@ -70,12 +70,12 @@ module ee354_project_top(
 	wire [1:0] In_Dirn;
     wire SCEN_dir; // Combined SCEN for any direction button
     
-    assign SCEN_dir = SCEN_U | SCEN_D | SCEN_L | SCEN_R;
+    assign SCEN_dir = BtnU_SCEN | BtnD_SCEN | BtnL_SCEN | BtnR_SCEN;
     
-    assign In_Dirn = SCEN_U ? 2'b00 :  // UP
-                     SCEN_D ? 2'b01 :  // DOWN
-                     SCEN_L ? 2'b10 :  // LEFT
-                     SCEN_R ? 2'b11 :  // RIGHT
+    assign In_Dirn = BtnU_SCEN ? 2'b00 :  // UP
+                     BtnD_SCEN ? 2'b01 :  // DOWN
+                     BtnL_SCEN ? 2'b10 :  // LEFT
+                     BtnR_SCEN ? 2'b11 :  // RIGHT
                      2'b00;            // Default UP
 
 	// State machine module

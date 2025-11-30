@@ -17,6 +17,7 @@ module ee354_project_apples(Clk, SCEN, Reset, Cell_Snake_Vector, New_Apple, Appl
 
     // LOCAL VARIABLES
     reg [7:0] LFSR; // Linear Feedback Shift Register (seemingly random number generator)
+    integer i;
     
     always @(posedge Clk or posedge Reset)
         begin
@@ -70,18 +71,20 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
     output reg Collision;
 
     // LOCAL VARIABLES
+    reg [3:0] Next_Head_X;
+    reg [3:0] Next_Head_Y;
     reg [7:0] Head_Ptr; // Points to NEXT head in circular buffer
     reg [7:0] Tail_Ptr; // Points to NEXT tail in circular buffer
-    reg [3:0] Curr_Dirn;
+    reg [3:0] Current_Dirn;
 
     // Update Head and Tail
     always @(posedge Clk, posedge Reset) 
     begin
         if (Reset)
             begin
-                Cell_Snake[0] <= 8'h86 // Tail at (8, 6)
-                Cell_Snake[1] <= 8'h87
-                Cell_Snake[2] <= 8'h88 // Head at (8, 8)
+                Cell_Snake[0] <= 8'h86; // Tail at (8, 6)
+                Cell_Snake[1] <= 8'h87;
+                Cell_Snake[2] <= 8'h88; // Head at (8, 8)
                 for (i = 3; i < 225; i = i + 1)
                     Cell_Snake[i] <= 8'hFF;
                 Head_X <= 4'h8;
@@ -99,7 +102,7 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
             begin
                 if (SCEN) // When button pressed
                     // Update current direction
-                    Current_Dirn <= In_Dirn
+                    Current_Dirn <= In_Dirn;
                 
                 if (Speed_Clk)
                 begin

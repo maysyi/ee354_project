@@ -94,7 +94,7 @@ module ee354_project_tb();
 		$display("--------------------------------------------------");
 		$display("  Testbench Complete");
 		$display("--------------------------------------------------\n");
-		$finish;
+		$finish; end
       
 endmodule
 

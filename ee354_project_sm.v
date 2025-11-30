@@ -6,7 +6,7 @@
 // Add coordinates for each snake part (up to 255)
 
 // State machine module
-module ee354_project_sm(Clk, Reset, Ack, Collision, Length, Cell_Snake, q_I, q_Run, q_Lose, q_Win);
+module ee354_project_sm(Clk, Reset, Ack, Collision, Length, q_I, q_Run, q_Lose, q_Win);
 
 	// INPUTS
 	input Clk, Reset, Ack;
