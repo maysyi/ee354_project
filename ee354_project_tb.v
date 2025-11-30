@@ -73,11 +73,11 @@ module ee354_project_tb();
 
 		// Test 3: Move down
 		test_num = test_num + 1;
-		$display("Test %0d: Move down", test_num);
+		$display("Test %0d: Move right", test_num);
 		$display("  Pressing down button...");
-		BtnD = 1'b1;
+		BtnR = 1'b1;
 		@(posedge ClkPort);
-		BtnU = 1'b0;
+		BtnR = 1'b0;
 		@(posedge ClkPort);
 		$display("  Button released\n");
 
@@ -85,16 +85,15 @@ module ee354_project_tb();
 		test_num = test_num + 1;
 		$display("Test %0d: Long Running Simulation", test_num);
 		$display("  Running simulation...");
-		repeat(1000) @(posedge ClkPort);
+		repeat(5000) @(posedge ClkPort);
 		$display("  Simulation complete");
-		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b\n", Ld3, Ld2, Ld1, Ld0);
-		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)\n");	
+		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
+		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)");	
 		
 		// generate a Start pulse
 		$display("--------------------------------------------------");
 		$display("  Testbench Complete");
-		$display("--------------------------------------------------\n");
-		$finish; end
+		end
       
 endmodule
 

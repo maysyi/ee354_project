@@ -38,14 +38,20 @@ module ee354_project_sm(Clk, Reset, Ack, Collision, Length, q_I, q_Run, q_Lose, 
                         state <= LOSE;
                     else if (Length == 8'd225)
                         state <= WIN;
+                    else
+                        state <= RUN;
                 LOSE:
                     // State transfers
                     if (Ack)
                         state <= I;
+                    else
+                        state <= LOSE;
                 WIN:
                     // State transfers
                     if (Ack)
                         state <= I;
+                    else
+                        state <= WIN;
                 default:		
                     state <= UNK;
             endcase

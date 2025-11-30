@@ -33,7 +33,7 @@ module ee354_project_top(
 	output 	An4, An5, An6, An7;
 
 	//  LOCAL SIGNALS
-	wire		Reset, ClkPort;
+	wire		Reset;
 	wire		board_clk, sys_clk;
 	wire [1:0] 	ssdscan_clk;
 	reg [26:0]	DIV_CLK;
@@ -42,27 +42,27 @@ module ee354_project_top(
 	wire BtnU_SCEN, BtnD_SCEN, BtnL_SCEN, BtnR_SCEN, BtnC_SCEN;
 
     ee354_debouncer #(.N_dc(28)) debounce_U (
-        .CLK(Clk), .RESET(Reset), .PB(BtnU),
+        .CLK(sys_clk), .RESET(Reset), .PB(BtnU),
         .DPB(), .SCEN(BtnU_SCEN), .MCEN(), .CCEN()
     );
     
     ee354_debouncer #(.N_dc(28)) debounce_D (
-        .CLK(Clk), .RESET(Reset), .PB(BtnD),
+        .CLK(sys_clk), .RESET(Reset), .PB(BtnD),
         .DPB(), .SCEN(BtnD_SCEN), .MCEN(), .CCEN()
     );
     
     ee354_debouncer #(.N_dc(28)) debounce_L (
-        .CLK(Clk), .RESET(Reset), .PB(BtnL),
+        .CLK(sys_clk), .RESET(Reset), .PB(BtnL),
         .DPB(), .SCEN(BtnL_SCEN), .MCEN(), .CCEN()
     );
     
     ee354_debouncer #(.N_dc(28)) debounce_R (
-        .CLK(Clk), .RESET(Reset), .PB(BtnR),
+        .CLK(sys_clk), .RESET(Reset), .PB(BtnR),
         .DPB(), .SCEN(BtnR_SCEN), .MCEN(), .CCEN()
     );
     
     ee354_debouncer #(.N_dc(28)) debounce_C (
-        .CLK(Clk), .RESET(Reset), .PB(BtnC),
+        .CLK(sys_clk), .RESET(Reset), .PB(BtnC),
         .DPB(), .SCEN(BtnC_SCEN), .MCEN(), .CCEN()
     );
 
@@ -83,7 +83,7 @@ module ee354_project_top(
     wire Collision;
     wire [7:0] Length;
     ee354_project_sm state_machine (
-        .Clk(Clk),
+        .Clk(sys_clk),
         .Reset(Reset),
         .Ack(BtnC_SCEN),
         .Collision(Collision),
@@ -103,7 +103,7 @@ module ee354_project_top(
 	wire [224:0] Cell_Snake_Vector;
     
 	ee354_project_length snake_length (
-		.Clk(Clk),
+		.Clk(sys_clk),
 		.SCEN(SCEN_dir),
 		.Reset(Reset),
 		.Speed_Clk(Speed_Clk),
