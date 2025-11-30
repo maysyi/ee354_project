@@ -148,7 +148,10 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                             if (Cell_Snake[i] != 8'hFF) // If this segment exists
                             begin
                                 if ((Cell_Snake[i][7:4] == Next_Head_X) && (Cell_Snake[i][3:0] == Next_Head_Y))
+                                begin
                                     Collision = 1;
+                                    return;
+                                end
                             end
                         end
                 end
