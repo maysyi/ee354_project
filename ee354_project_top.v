@@ -101,6 +101,8 @@ module ee354_project_top(
 	wire New_Apple;
 	// occupancy vector: 225 bits (one per cell)
 	wire [224:0] Cell_Snake_Vector;
+	// Snake movement clock (game speed clock from divided sys_clk)
+	wire Speed_Clk;
     
 	ee354_project_length snake_length (
 		.Clk(sys_clk),
@@ -126,7 +128,7 @@ module ee354_project_top(
 
 	// `Cell_Snake_Vector` is provided by the length module (225-bit occupancy vector)
     ee354_project_apples apple_gen (
-        .Clk(Clk),
+        .Clk(sys_clk),
         .SCEN(SCEN_dir),
         .Reset(Reset),
         .Cell_Snake_Vector(Cell_Snake_Vector),
@@ -172,6 +174,10 @@ module ee354_project_top(
 	assign	sys_clk = board_clk;
 	// assign	sys_clk = DIV_CLK[25];
 //------------ ABOVE SEGMENT IS UNEDITED ------------ //
+	
+	// Generate snake movement clock: use a divided clock for game speed
+	// DIV_CLK[24] gives ~6 Hz (100MHz / 2^24), good for visible snake movement
+	assign Speed_Clk = DIV_CLK[24];
 
 	// Indicate current state on LEDs.
 	assign {Ld0, Ld1, Ld2, Ld3} = {q_I, q_Run, q_Lose, q_Win};
