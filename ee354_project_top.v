@@ -137,47 +137,27 @@ module ee354_project_top(
         .Apple_Y(Apple_Y)
     );
 	
-//------------ CLOCK DIVISION SEGMENT IS UNEDITED ------------ //
-// CLOCK DIVISION
-
-	// The clock division circuitary works like this:
-	//
-	// ClkPort ---> [BUFGP2] ---> board_clk
-	// board_clk ---> [clock dividing counter] ---> DIV_CLK
-	// DIV_CLK ---> [constant assignment] ---> sys_clk;
-	
-	// BUFGP is a Xilinx primitive; for simulation, use simple wire assignment
-	// (uncomment BUFGP instantiation below for synthesis/FPGA implementation)
+	// Clock division segment
+	// BUFGP is a Xilinx primitive; for simulation, use simple wire assignment (uncomment BUFGP instantiation below for synthesis/FPGA implementation)
 	// BUFGP BUFGP1 (board_clk, ClkPort);
-	assign board_clk = ClkPort; 	
-
-// As the ClkPort signal travels throughout our design,
-// it is necessary to provide global routing to this signal. 
-// The BUFGPs buffer these input ports and connect them to the global 
-// routing resources in the FPGA.
+	assign board_clk = ClkPort;
 
 	assign Reset = BtnC;
 	
-//------------
-	// Our clock is too fast (100MHz) for SSD scanning
-	// create a series of slower "divided" clocks
-	// each successive bit is 1/2 frequency
-  always @(posedge board_clk, posedge Reset) 	
+	// Create a series of slower "divided" clocks
+  	always @(posedge board_clk, posedge Reset) 	
     begin							
         if (Reset)
 		DIV_CLK <= 0;
         else
 		DIV_CLK <= DIV_CLK + 1'b1;
     end
-//-------------------	
-	// In this design, we run the core design at full 100MHz clock!
+
+	// In this design, we run the core design at full 100MHz clock
 	assign	sys_clk = board_clk;
-	// assign	sys_clk = DIV_CLK[25];
-//------------ ABOVE SEGMENT IS UNEDITED ------------ //
 	
-	// Generate snake movement clock: use a divided clock for game speed
-	// DIV_CLK[24] gives ~6 Hz (100MHz / 2^24), good for visible snake movement
-	assign Speed_Clk = DIV_CLK[20];
+	// Snake movement clock
+	assign Speed_Clk = DIV_CLK[24]; // DIV_CLK[24] gives ~6 Hz, good for visible snake movement
 
 	// Indicate current state on LEDs.
 	assign {Ld0, Ld1, Ld2, Ld3} = {q_I, q_Run, q_Lose, q_Win};

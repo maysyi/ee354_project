@@ -85,7 +85,7 @@ module ee354_project_tb();
 		test_num = test_num + 1;
 		$display("Test %0d: Long Running Simulation", test_num);
 		$display("  Running simulation...");
-		repeat(5000) @(posedge ClkPort);
+		#1200000000;  // 1.2 seconds (safe margin for 7 moves)
 		$display("  Simulation complete");
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
 		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)");	
