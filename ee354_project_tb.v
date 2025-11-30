@@ -92,7 +92,7 @@ module ee354_project_tb();
 		
 		// generate a Start pulse
 		$display("--------------------------------------------------");
-		$display("  Testbench Complete");
+		$display("Testbench Complete");
 		end
       
 endmodule

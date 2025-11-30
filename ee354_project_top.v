@@ -177,7 +177,7 @@ module ee354_project_top(
 	
 	// Generate snake movement clock: use a divided clock for game speed
 	// DIV_CLK[24] gives ~6 Hz (100MHz / 2^24), good for visible snake movement
-	assign Speed_Clk = DIV_CLK[24];
+	assign Speed_Clk = DIV_CLK[20];
 
 	// Indicate current state on LEDs.
 	assign {Ld0, Ld1, Ld2, Ld3} = {q_I, q_Run, q_Lose, q_Win};
