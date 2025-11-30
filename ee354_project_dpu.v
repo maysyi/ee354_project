@@ -51,7 +51,7 @@ module ee354_project_apples(Clk, SCEN, Reset, Cell_Snake_Vector, New_Apple, Appl
 endmodule
 
 // Module to update length and position of snake head and tail
-module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lose, In_Dirn, Head_X, Head_Y, Apple_X, Apple_Y, Length, Cell_Snake_Vector);
+module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lose, In_Dirn, Head_X, Head_Y, Tail_X, Tail_Y, New_Apple, Collision, Apple_X, Apple_Y, Length, Cell_Snake_Vector);
 
     // INPUTS
     input Clk, SCEN, Reset, Speed_Clk; // Speed_Clk need to generate in top file (the speed/intervals at which the snake moves)
