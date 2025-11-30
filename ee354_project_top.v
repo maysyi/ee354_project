@@ -144,7 +144,10 @@ module ee354_project_top(
 	// board_clk ---> [clock dividing counter] ---> DIV_CLK
 	// DIV_CLK ---> [constant assignment] ---> sys_clk;
 	
-	BUFGP BUFGP1 (board_clk, ClkPort); 	
+	// BUFGP is a Xilinx primitive; for simulation, use simple wire assignment
+	// (uncomment BUFGP instantiation below for synthesis/FPGA implementation)
+	// BUFGP BUFGP1 (board_clk, ClkPort);
+	assign board_clk = ClkPort; 	
 
 // As the ClkPort signal travels throughout our design,
 // it is necessary to provide global routing to this signal. 
@@ -168,6 +171,7 @@ module ee354_project_top(
 	// In this design, we run the core design at full 100MHz clock!
 	assign	sys_clk = board_clk;
 	// assign	sys_clk = DIV_CLK[25];
+//------------ ABOVE SEGMENT IS UNEDITED ------------ //
 
 	// Indicate current state on LEDs.
 	assign {Ld0, Ld1, Ld2, Ld3} = {q_I, q_Run, q_Lose, q_Win};
