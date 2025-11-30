@@ -3,150 +3,98 @@
 // Description: Modified significantly from template file, to execute Snake game simulation. This file is the testbench
 //////////////////////////////////////////////////////////////////////////////////
 
-// Not edited from original file at all! (Yet!)
-
 `timescale 1ns / 1ps
 
-module ee354_GCD_SCEN_tb_v;
+module ee354_project_tb();
 
 	// Inputs
-	reg Clk, SCEN;
-	reg Reset;
-	reg Start;
-	reg Ack;
-	reg [7:0] Ain;
-	reg [7:0] Bin;
+	reg ClkPort;
+	reg BtnL, BtnU, BtnD, BtnR, BtnC;
 
 	// Outputs
-	wire [7:0] A, B, AB_GCD, i_count;
-	wire q_I;
-	wire q_Sub;
-	wire q_Mult;
-	wire q_Done;
-	reg [6*8:0] state_string; // 6-character string for symbolic display of state
+	wire Ld0, Ld1, Ld2, Ld3;
+	wire An0, An1, An2, An3, An4, An5, An6, An7;
+	wire Cg, Cf, Ce, Cd, Cc, Cb, Ca, Dp;
+
+	// Local variables
+	integer test_num;
 	
 	// Instantiate the Unit Under Test (UUT)
-	ee354_GCD uut (
-		.Clk(Clk), 
-		.SCEN(SCEN),
-		.Reset(Reset), 
-		.Start(Start), 
-		.Ack(Ack), 
-		.Ain(Ain), 
-		.Bin(Bin), 
-		.A(A),
-		.B(B),
-		.AB_GCD(AB_GCD), 
-		.i_count(i_count),
-		.q_I(q_I), 
-		.q_Sub(q_Sub), 
-		.q_Mult(q_Mult), 
-		.q_Done(q_Done)
+	ee354_project_top uut (
+		.ClkPort(ClkPort),
+		.BtnL(BtnL), .BtnU(BtnU), .BtnD(BtnD), .BtnR(BtnR),
+		.BtnC(BtnC),
+		.Ld3(Ld3), .Ld2(Ld2), .Ld1(Ld1), .Ld0(Ld0),
+		.An7(An7), .An6(An6), .An5(An5), .An4(An4), .An3(An3), .An2(An2), .An1(An1), .An0(An0),
+		.Ca(Ca), .Cb(Cb), .Cc(Cc), .Cd(Cd), .Ce(Ce), .Cf(Cf), .Cg(Cg),
+		.Dp(Dp)  
 	);
 		
 		initial 
 		  begin
-			Clk = 0; // Initialize clock
+			ClkPort = 0; // Initialize clock
 		  end
 		
-		always  begin #10; Clk = ~ Clk; end
+		always  begin #5; ClkPort = ~ ClkPort; end // 100 MHz clock
 		
 		initial begin
 		// Initialize Inputs
-		Clk = 0;
-		SCEN = 1; // ****** in Part 2 ******
-				 // Here, in Part 1, we are enabling clock permanently by making SCEN a '1' constantly.
-				 // In Part 2, your TOP design provides single-stepping through SCEN control.
-				 // We are not planning to write a testbench for the part 2 design. However, if we were 
-				 // to write one, we will remove this line, and make SCEN enabled and disabled to test 
-				 // single stepping.
-				 // One of the things you make sure in your core design (DUT) is that when state 
-				 // transitions are stopped by making SCEN = 0,
-				 // the data transformations are also stopped.
-		Reset = 0;
-		Start = 0;
-		Ack = 0;
-		Ain = 0;
-		Bin = 0;
+		BtnL = 1'b0;
+		BtnU = 1'b0;
+		BtnD = 1'b0;
+		BtnR = 1'b0;
+		BtnC = 1'b0;
+		test_num = 0;
 
+		$display("EE354L Project Testbench Starting...");
+		$display("--------------------------------------------------");
 
 		// Wait 100 ns for global reset to finish
-		#103;
-
-		// stimulus-1 GCD(36, 24)
-		// Initialize Inputs
-		Ain = 36;
-		Bin = 24;
-		#20;				
+		#100;
 		
-		// generate a reset pulse
-		Reset = 1;
-		#20;					
-		Reset = 0;
-		#20;					
+		// Test 1: Reset and Initial State
+		test_num = test_num + 1;
+		$display("Test %0d: Reset and Initial State", test_num);
+		$display("  Applying reset...");
+		BtnC = 1'b1;
+		@(posedge ClkPort);
+		BtnC = 1'b0;
+		@(posedge ClkPort);
+		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
+		$display("  EXPECTED: Ld3=0, Ld2=0, Ld1=0, Ld0=1 (Initial state)\n");			
 		
-		// generate a Start pulse
-		Start = 1;
-		#40;	
-		Start = 0;
-			
-		#140;	// ****** TODO   ******
-				// figure out the minimum delay amount	  
-				// needed (in integral multiples of 20's) before acknowledging
-				// for the data Ain = 36 and Bin = 24
-				// note: Start is given for 2 clocks, though it is needed only 
-				// for 1 clock.
-		// generate and Ack pulse
-		Ack = 1;
-		#20;		
-		Ack = 0;
-		#20;					
+		// Test 2: Initial to run state
+		test_num = test_num + 1;
+		$display("Test %0d: Initial to run state", test_num);
+		$display("  Waiting for state transition...");
+		@(posedge ClkPort);
+		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
+		$display("  EXPECTED: Ld3=0, Ld2=0, Ld1=1, Ld0=0 (Run state)\n");	
 
+		// Test 3: Move down
+		test_num = test_num + 1;
+		$display("Test %0d: Move down", test_num);
+		$display("  Pressing down button...");
+		BtnD = 1'b1;
+		@(posedge ClkPort);
+		BtnU = 1'b0;
+		@(posedge ClkPort);
+		$display("  Button released\n");
 
-		// stimulus-2 GCD(5, 15)
-		// Initialize Inputs
-		Ain = 5;
-		Bin = 15;
-		#20;					
-		
-		// generate a Reset pulse
-		Reset = 1;
-		#20;					
-		Reset = 0;
-		#20;					
+		// Test 4: Long Running Simulation
+		test_num = test_num + 1;
+		$display("Test %0d: Long Running Simulation", test_num);
+		$display("  Running simulation...");
+		repeat(1000) @(posedge ClkPort);
+		$display("  Simulation complete");
+		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b\n", Ld3, Ld2, Ld1, Ld0);
+		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)\n");	
 		
 		// generate a Start pulse
-		Start = 1;
-		#20;
-		Start = 0;
-
-			
-		#80;	// ****** TODO ******
-				// figure out the correct delay amount	    
-				// needed before acknowledging
-				// for the data Ain = 5 and Bin = 15			   
-				// Suggest to your TA a better way to code
-				// which works for all Ain and Bin 
-		// generate and Ack pulse
-		Ack = 1;
-		#40;
-		Ack = 0;
-		#20;					
-
-
-	end
-	
-	always @(*)
-		begin
-			case ({q_I, q_Sub, q_Mult, q_Done})    // Note the concatenation operator {}
-				4'b1000: state_string = "q_I   ";  // ****** TODO ******
-				4'b0100: state_string = "q_Sub";       // Fill-in the three lines
-				4'b0010: state_string = "q_Mult";
-				4'b0001: state_string = "q_Done";
-
-			endcase
-		end
- 
+		$display("--------------------------------------------------");
+		$display("  Testbench Complete");
+		$display("--------------------------------------------------\n");
+		$finish;
       
 endmodule
 

@@ -148,7 +148,7 @@ module ee354_project_top(
         .Apple_Y(Apple_Y)
     );
 	
-//------------ CLOCK DIVISION SEGMENT IS UNEDITED
+//------------ CLOCK DIVISION SEGMENT IS UNEDITED ------------ //
 // CLOCK DIVISION
 
 	// The clock division circuitary works like this:
@@ -183,7 +183,7 @@ module ee354_project_top(
 	// assign	sys_clk = DIV_CLK[25];
 
 	// Indicate current state on LEDs.
-	assign {Ld3, Ld2, Ld1, Ld0} = {q_I, q_Run, q_Lose, q_Win};
+	assign {Ld0, Ld1, Ld2, Ld3} = {q_I, q_Run, q_Lose, q_Win};
 	
 	// Display length on SSD
 	reg [3:0]	SSD; // One-hot state assignment for which SSD to use
