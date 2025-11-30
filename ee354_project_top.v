@@ -96,48 +96,35 @@ module ee354_project_top(
 
 	// Length and head/tail position
 	wire [3:0] Head_X, Head_Y;
-    wire [3:0] Tail_X, Tail_Y;
-    wire [3:0] Apple_X, Apple_Y;
-    wire New_Apple;
-    wire [7:0] Cell_Snake [0:224];
+	wire [3:0] Tail_X, Tail_Y;
+	wire [3:0] Apple_X, Apple_Y;
+	wire New_Apple;
+	// occupancy vector: 225 bits (one per cell)
+	wire [224:0] Cell_Snake_Vector;
     
-    ee354_project_length snake_length (
-        .Clk(Clk),
-        .SCEN(SCEN_dir),
-        .Reset(Reset),
-        .Speed_Clk(Speed_Clk),
-        .q_I(q_I),
-        .q_Run(q_Run),
-        .q_Win(q_Win),
-        .q_Lose(q_Lose),
-        .In_Dirn(In_Dirn),
-        .Head_X(Head_X),
-        .Head_Y(Head_Y),
-        .Apple_X(Apple_X),
-        .Apple_Y(Apple_Y),
-        .Length(Length),
-        .Cell_Snake(Cell_Snake),
-        .Tail_X(Tail_X),
-        .Tail_Y(Tail_Y),
-        .New_Apple(New_Apple),
-        .Collision(Collision)
-    );
+	ee354_project_length snake_length (
+		.Clk(Clk),
+		.SCEN(SCEN_dir),
+		.Reset(Reset),
+		.Speed_Clk(Speed_Clk),
+		.q_I(q_I),
+		.q_Run(q_Run),
+		.q_Win(q_Win),
+		.q_Lose(q_Lose),
+		.In_Dirn(In_Dirn),
+		.Head_X(Head_X),
+		.Head_Y(Head_Y),
+		.Apple_X(Apple_X),
+		.Apple_Y(Apple_Y),
+		.Length(Length),
+		.Cell_Snake_Vector(Cell_Snake_Vector),
+		.Tail_X(Tail_X),
+		.Tail_Y(Tail_Y),
+		.New_Apple(New_Apple),
+		.Collision(Collision)
+	);
 
-	// Apple generation
-    wire [224:0] Cell_Snake_Vector;
-    integer idx;
-    // Create a grid representation (15x15 = 225 cells)
-    reg [224:0] Grid;
-    always @(*) begin
-        Grid = 224'd0;  // Clear grid
-        for (idx = 0; idx < 225; idx = idx + 1) begin
-            if (Cell_Snake[idx] != 8'hFF) begin
-                // Set bit at position [X*16 + Y]
-                Grid[Cell_Snake[idx][7:4] * 15 + Cell_Snake[idx][3:0]] = 1'b1;
-            end
-        end
-    end
-    assign Cell_Snake_Vector = Grid;
+	// `Cell_Snake_Vector` is provided by the length module (225-bit occupancy vector)
     ee354_project_apples apple_gen (
         .Clk(Clk),
         .SCEN(SCEN_dir),

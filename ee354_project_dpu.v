@@ -51,7 +51,7 @@ module ee354_project_apples(Clk, SCEN, Reset, Cell_Snake_Vector, New_Apple, Appl
 endmodule
 
 // Module to update length and position of snake head and tail
-module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lose, In_Dirn, Head_X, Head_Y, Apple_X, Apple_Y, Length, Cell_Snake);
+module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lose, In_Dirn, Head_X, Head_Y, Apple_X, Apple_Y, Length, Cell_Snake_Vector);
 
     // INPUTS
     input Clk, SCEN, Reset, Speed_Clk; // Speed_Clk need to generate in top file (the speed/intervals at which the snake moves)
@@ -62,7 +62,7 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
 
     // OUTPUT
     output reg [7:0] Length;
-    output reg [7:0] Cell_Snake [0:224]; // 225 registers to store coordinates for each snake part (1111 1111 means snake part does not exist yet)
+    output reg [224:0] Cell_Snake_Vector; // Exported occupancy vector: 1 if occupied, 0 otherwise (225 bits)
     output reg [3:0] Head_X;
     output reg [3:0] Head_Y;
     output reg [3:0] Tail_X;
@@ -76,6 +76,8 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
     reg [7:0] Head_Ptr; // Points to NEXT head in circular buffer
     reg [7:0] Tail_Ptr; // Points to NEXT tail in circular buffer
     reg [3:0] Current_Dirn;
+    reg [7:0] Cell_Snake [0:224]; // Internal storage of snake parts
+    integer i;
 
     // Update Head and Tail
     always @(posedge Clk, posedge Reset) 
@@ -97,6 +99,11 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                 New_Apple <= 0;
                 Collision <= 0;
                 Current_Dirn <= 2'b00; // Start moving up first
+                // Initialize exported occupancy vector
+                Cell_Snake_Vector <= 225'd0;
+                Cell_Snake_Vector[Cell_Snake[0][7:4]*15 + Cell_Snake[0][3:0]] <= 1'b1;
+                Cell_Snake_Vector[Cell_Snake[1][7:4]*15 + Cell_Snake[1][3:0]] <= 1'b1;
+                Cell_Snake_Vector[Cell_Snake[2][7:4]*15 + Cell_Snake[2][3:0]] <= 1'b1;
             end
         else if (q_Run) // Need to add conditional state requirement
             begin
@@ -143,20 +150,31 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                     end
 
                     // Check for wall or body collision
-                    if ((Next_Head_X > 4'hE) || (Next_Head_Y > 4'hE))
+                    if ((Next_Head_X > 4'hE) || (Next_Head_Y > 4'hE)) begin
                         Collision <= 1;
-                    else
+                    end else begin
                         for (i=0; i<225; i=i+1)
                         begin
                             if (Cell_Snake[i] != 8'hFF) // If this segment exists
                             begin
                                 if ((Cell_Snake[i][7:4] == Next_Head_X) && (Cell_Snake[i][3:0] == Next_Head_Y))
                                 begin
-                                    Collision = 1;
-                                    return;
+                                    Collision <= 1;
                                 end
                             end
                         end
+                    end
+
+                    // Recompute occupancy vector after movement
+                    begin : recompute_vector
+                        integer j;
+                        Cell_Snake_Vector = 225'd0;
+                        for (j = 0; j < 225; j = j + 1) begin
+                            if (Cell_Snake[j] != 8'hFF) begin
+                                Cell_Snake_Vector[Cell_Snake[j][7:4]*15 + Cell_Snake[j][3:0]] = 1'b1;
+                            end
+                        end
+                    end
                 end
             end
     end    
