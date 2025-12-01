@@ -71,7 +71,7 @@ module ee354_project_tb();
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
 		$display("  EXPECTED: Ld3=0, Ld2=0, Ld1=1, Ld0=0 (Run state)\n");	
 
-		// Test 3: Move down
+		// Test 3: Move right
 		test_num = test_num + 1;
 		$display("Test %0d: Move right", test_num);
 		$display("  Pressing down button...");
@@ -88,9 +88,39 @@ module ee354_project_tb();
 		#1200000000;  // 1.2 seconds (safe margin for 7 moves)
 		$display("  Simulation complete");
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
+		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)\n");
+
+		// Test 5: Lose and Initial State
+		test_num = test_num + 1;
+		$display("Test %0d: Lose and Initial State", test_num);
+		$display("  Applying reset...");
+		BtnC = 1'b1;
+		@(posedge ClkPort);
+		BtnC = 1'b0;
+		@(posedge ClkPort);
+		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
+		$display("  EXPECTED: Ld3=0, Ld2=0, Ld1=0, Ld0=1 (Initial state)\n");
+
+		// Test 6: Initial to run state
+		test_num = test_num + 1;
+		$display("Test %0d: Initial to run state", test_num);
+		$display("  Waiting for state transition...");
+		@(posedge ClkPort);
+		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
+		$display("  EXPECTED: Ld3=0, Ld2=0, Ld1=1, Ld0=0 (Run state)\n");	
+
+		// Test 7: Move down to lose
+		test_num = test_num + 1;
+		$display("Test %0d: Move down", test_num);
+		$display("  Pressing down button...");
+		BtnU = 1'b1;
+		@(posedge ClkPort);
+		BtnU = 1'b0;
+		$display("  Button released\n");
+		#180000000; // Wait sufficient time for snake to collide with itself
+		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
 		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)");	
 		
-		// generate a Start pulse
 		$display("--------------------------------------------------");
 		$display("Testbench Complete");
 		end
