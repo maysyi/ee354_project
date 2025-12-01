@@ -86,21 +86,20 @@ module ee354_project_top(
                      2'b00;            // Default UP
 
 	// Sample direction on sys_clk with a small synchronizer and sampler
-	reg [1:0] In_Dirn_meta;    // first-stage synchronizer
-	reg [1:0] In_Dirn_sys;     // sampled direction synchronized to sys_clk
+	// reg [1:0] In_Dirn_meta;    // first-stage synchronizer
+	// reg [1:0] In_Dirn_sys;     // sampled direction synchronized to sys_clk
 
-	always @(posedge sys_clk or posedge Reset) begin
-		if (Reset) begin
-			In_Dirn_meta <= 2'b00;
-			In_Dirn_sys  <= 2'b00;
-		end else begin
-			// Two-stage sync for safety (meta stage)
-			In_Dirn_meta <= In_Dirn;
-			// Sample direction when a debounced SCEN occurs
-			if (SCEN_dir)
-				In_Dirn_sys <= In_Dirn_meta;
-		end
-	end
+	// always @(posedge sys_clk or posedge Reset) begin
+	// 	if (Reset) begin
+	// 		In_Dirn_meta <= 2'b00;
+	// 		In_Dirn_sys  <= 2'b00;
+	// 	end else begin
+	// 		// Two-stage sync for safety (meta stage)
+	// 		In_Dirn_meta <= In_Dirn;
+	// 		// Sample direction when a debounced SCEN occurs
+	// 		In_Dirn_sys <= In_Dirn_meta;
+	// 	end
+	// end
 
 	// State machine module
 	wire q_Win, q_Lose, q_Run, q_I;
@@ -137,7 +136,7 @@ module ee354_project_top(
 		.q_Run(q_Run),
 		.q_Win(q_Win),
 		.q_Lose(q_Lose),
-		.In_Dirn(In_Dirn_sys),
+		.In_Dirn(In_Dirn),
 		.Head_X(Head_X),
 		.Head_Y(Head_Y),
 		.Apple_X(Apple_X),

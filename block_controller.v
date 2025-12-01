@@ -34,8 +34,12 @@ module block_controller(
                      (vCount <  V_OFFSET + GRID_SIZE*CELL_SIZE);
 
 	wire in_grid = in_grid_x && in_grid_y;
-	wire [9:0] rel_x = hCount - H_OFFSET;
-	wire [9:0] rel_y = vCount - V_OFFSET;
+	// wire [9:0] rel_x = hCount - H_OFFSET;
+	// wire [9:0] rel_y = vCount - V_OFFSET;
+
+	wire [9:0] rel_x = in_grid_x ? (hCount - H_OFFSET) : 10'd0;
+	wire [9:0] rel_y = in_grid_y ? (vCount - V_OFFSET) : 10'd0;
+
 
 	// // which tile are we in? (0–14)
 	// wire [3:0] tile_x = rel_x / CELL_SIZE;
@@ -62,8 +66,17 @@ module block_controller(
     end
 	endfunction
 
-	wire [3:0] tile_x = tile_from_rel(rel_x);
-	wire [3:0] tile_y = tile_from_rel(rel_y);
+	reg [3:0] tile_x , tile_y ;
+
+	always @* begin
+    if (in_grid) begin
+        tile_x = tile_from_rel(rel_x);
+        tile_y = tile_from_rel(rel_y);
+    end else begin
+        tile_x = 4'd0;
+        tile_y = 4'd0;
+    end
+	end
 
 	wire [9:0] tile_x_base = tile_x * CELL_SIZE; // 30 = 16+8+4+2 -> shifts/adds, cheap
 	wire [9:0] tile_y_base = tile_y * CELL_SIZE;

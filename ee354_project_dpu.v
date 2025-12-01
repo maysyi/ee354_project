@@ -78,7 +78,7 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
     reg [3:0] Next_Head_Y;
     reg [7:0] Head_Ptr; // Points to NEXT head in circular buffer
     reg [7:0] Tail_Ptr; // Points to NEXT tail in circular buffer
-    reg [3:0] Current_Dirn;
+    reg [1:0] Current_Dirn;
     reg [7:0] Cell_Snake [0:224]; // Internal storage of snake parts
     integer i;
 
@@ -96,12 +96,23 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
     wire [7:0] tail_ptr_plus1 =
                             (Tail_Ptr == 8'd224) ? 8'd0 : (Tail_Ptr + 8'd1);
 
-    always @(*)
-    begin
-        if (SCEN) // When button pressed
-            // Update current direction
+    // always @(*)
+    // begin
+    //     if (SCEN) // When button pressed
+    //         // Update current direction
+    //         Current_Dirn <= In_Dirn;
+    // end
+
+    // Direction register lives in sys_clk domain
+    always @(posedge Clk or posedge Reset) begin
+        if (Reset) begin
+            Current_Dirn <= 2'b01;  // e.g. UP
+        end else if (SCEN) begin
+            // Debounced pulse: capture the new direction immediately
             Current_Dirn <= In_Dirn;
+        end
     end
+
     
     // Update Head and Tail
     always @(posedge Speed_Clk, posedge Reset) 
@@ -122,7 +133,7 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                 Length <= 8'h03;
                 New_Apple <= 0;
                 Collision <= 0;
-                Current_Dirn <= 2'b00; // Start moving up first
+                // Current_Dirn <= 2'b00; // Start moving up first
                 // Initialize exported occupancy vector
                 Cell_Snake_Vector <= 225'd0;
                 Cell_Snake_Vector[Cell_Snake[0][7:4]*15 + Cell_Snake[0][3:0]] <= 1'b1;
@@ -142,9 +153,9 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                 // Update next location of head
                 case (Current_Dirn)
                     2'b00: // UP
-                        Next_Head_Y = Head_Y + 4'h1;
+                        Next_Head_Y = Head_Y - 4'h1;
                     2'b01: // DOWN
-                        Next_Head_Y = Head_Y - 4'h1; 
+                        Next_Head_Y = Head_Y + 4'h1; 
                     2'b10: // LEFT
                         Next_Head_X = Head_X - 4'h1; 
                     2'b11: // RIGHT
