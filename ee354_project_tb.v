@@ -74,7 +74,7 @@ module ee354_project_tb();
 		// Test 3: Move right
 		test_num = test_num + 1;
 		$display("Test %0d: Move right", test_num);
-		$display("  Pressing down button...");
+		$display("  Pressing right button...");
 		BtnR = 1'b1;
 		@(posedge ClkPort);
 		BtnR = 1'b0;
@@ -116,9 +116,9 @@ module ee354_project_tb();
 		test_num = test_num + 1;
 		$display("Test %0d: Move down", test_num);
 		$display("  Pressing down button...");
-		BtnU = 1'b1;
+		BtnD = 1'b1;
 		@(posedge ClkPort);
-		BtnU = 1'b0;
+		BtnD = 1'b0;
 		$display("  Button released");
 		#180000000; // Wait sufficient time for snake to collide with itself
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
