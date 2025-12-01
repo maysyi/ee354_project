@@ -5,15 +5,17 @@ module block_controller(
 	input mastClk,
 	input bright,
 	input rst,
-	input up, input down, input left, input right,
+	// input up, input down, input left, input right,
 	input [9:0] hCount, vCount,
+	input [3:0] Head_X, Head_Y, Tail_X, Tail_Y, Apple_X, Apple_Y,
+	input [224:0] Cell_Snake_Vector,
 	output reg [11:0] rgb,
 	output reg [11:0] background
    );
 	
 	//these two values dictate the center of the block, incrementing and decrementing them leads the block to move in certain directions
-	reg[3:0] head_x, head_y;
-	reg[3:0] body_x, body_y;
+	// reg[3:0] Head_X, Head_Y;
+	// reg[3:0] body_x, body_y;
 	wire [9:0] xHeadPos;
 	wire [9:0] yHeadPos;
 	wire [9:0] xBodyPos;
@@ -32,17 +34,17 @@ module block_controller(
 
 	//pull from top file later 
 
-	// Apple in tile coords (which cell it's in)
-	reg [3:0] apple_x = 4'd10;  // choose any 0–14
-	reg [3:0] apple_y = 4'd4;   // choose any 0–14
+	// // Apple in tile coords (which cell it's in)
+	// reg [3:0] Apple_X = 4'd10;  // choose any 0–14
+	// reg [3:0] Apple_Y = 4'd4;   // choose any 0–14
 
 	localparam CELL_SIZE = 30;
 	localparam GRID_SIZE = 15;
 	localparam H_OFFSET  = (640 - GRID_SIZE*CELL_SIZE)/2;
 	localparam V_OFFSET  = (480 - GRID_SIZE*CELL_SIZE)/2;
 
-	wire [9:0] APPLE_X_POS = H_OFFSET + apple_x * CELL_SIZE;
-	wire [9:0] APPLE_Y_POS = V_OFFSET + apple_y * CELL_SIZE;
+	wire [9:0] APPLE_X_POS = H_OFFSET + Apple_X * CELL_SIZE;
+	wire [9:0] APPLE_Y_POS = V_OFFSET + Apple_Y * CELL_SIZE;
 
 	wire in_grid_x = (hCount >= H_OFFSET) &&
                      (hCount <  H_OFFSET + GRID_SIZE*CELL_SIZE);
@@ -61,35 +63,47 @@ module block_controller(
 	wire [4:0] tile_row = rel_y % CELL_SIZE;
 	wire [4:0] tile_col = rel_x % CELL_SIZE;	
 
-	assign xHeadPos = H_OFFSET + head_x * CELL_SIZE;
-	assign yHeadPos = V_OFFSET + head_y * CELL_SIZE;
+	wire [7:0] cell_index = tile_x * GRID_SIZE + tile_y;
+
+	wire snake_here = in_grid && Cell_Snake_Vector[cell_index];
+	wire head_here = in_grid && (tile_x == Head_X) && (tile_y == Head_Y);
+	wire apple_here = in_grid && (tile_x == Apple_X) && (tile_y == Apple_Y);
+	wire body_here = in_grid && (tile_x == Tail_X) && (tile_y == Tail_Y);
+
+	assign xHeadPos = H_OFFSET + Head_X * CELL_SIZE;
+	assign yHeadPos = V_OFFSET + Head_Y * CELL_SIZE;
 
 	assign xBodyPos = H_OFFSET + body_x * CELL_SIZE;
 	assign yBodyPos = V_OFFSET + body_y * CELL_SIZE;
 
 
-	apple_rom ar(.clk(mastClk), .row(vCount-APPLE_Y), .col(hCount-APPLE_X), .color_data(apple_color));
-	snakeHead_rom shr(.clk(mastClk), .row(vCount-yHeadPos), .col(hCount-xHeadPos), .color_data(sh_color));
-	snakeBody_rom sbr(.clk(mastClk), .row(vCount-yBodyPos), .col(hCount-xBodyPos), .color_data(sb_color));
+	// apple_rom ar(.clk(mastClk), .row(vCount-APPLE_Y_POS), .col(hCount-APPLE_X_POS), .color_data(apple_color));
+	// snakeHead_rom shr(.clk(mastClk), .row(vCount-yHeadPos), .col(hCount-xHeadPos), .color_data(sh_color));
+	// snakeBody_rom sbr(.clk(mastClk), .row(vCount-yBodyPos), .col(hCount-xBodyPos), .color_data(sb_color));
+	// bg_rom br (.clk(mastClk), .row(tile_row), .col(tile_col), .color_data(tile_color));
+
+	apple_rom ar(.clk(mastClk), .row(tile_row), .col(tile_col), .color_data(apple_color));
+	snakeHead_rom shr(.clk(mastClk), .row(tile_row), .col(tile_col), .color_data(sh_color));
+	snakeBody_rom sbr(.clk(mastClk), .row(tile_row), .col(tile_col), .color_data(sb_color));
 	bg_rom br (.clk(mastClk), .row(tile_row), .col(tile_col), .color_data(tile_color));
 
-	assign apple_fill = (vCount >= APPLE_Y) && (vCount <= APPLE_Y + 29) && 
-						(hCount >= APPLE_X) && (hCount <= APPLE_X + 29);
-	assign sh_fill = (vCount >= yHeadPos) && (vCount <= yHeadPos + 29) && 
-						(hCount >= xHeadPos) && (hCount <= xHeadPos + 29);
-	assign sb_fill = (vCount >= yBodyPos) && (vCount <= yBodyPos + 29) && 
-						(hCount >= xBodyPos) && (hCount <= xBodyPos + 29);
+	assign apple_fill = (vCount >= APPLE_Y_POS) && (vCount < APPLE_Y_POS + CELL_SIZE) && 
+						(hCount >= APPLE_X_POS) && (hCount < APPLE_X_POS + CELL_SIZE);
+	assign sh_fill = (vCount >= yHeadPos) && (vCount < yHeadPos + CELL_SIZE) && 
+						(hCount >= xHeadPos) && (hCount < xHeadPos + CELL_SIZE);
+	assign sb_fill = (vCount >= yBodyPos) && (vCount < yBodyPos + CELL_SIZE) && 
+						(hCount >= xBodyPos) && (hCount < xBodyPos + CELL_SIZE);
 
 	/*when outputting the rgb value in an always block like this, make sure to include the if(~bright) statement, as this ensures the monitor 
 	will output some data to every pixel and not just the images you are trying to display*/
 	always@ (*) begin
     	if(~bright )	//force black if not inside the display area
 			rgb = 12'b0000_0000_0000;
-		else if (apple_fill) 
+		else if (apple_here) 
 			rgb = apple_color; 
-		else if (sh_fill)
+		else if (head_here)
 			rgb = sh_color;
-		else if (sb_fill)
+		else if (body_here)
 			rgb = sb_color;
 		else if (in_grid)	
 			rgb=tile_color;
@@ -103,43 +117,42 @@ module block_controller(
 		if(rst)
 		begin 
 			//rough values for center of screen
-			head_x <= 7;   // roughly center (0..14)
-			head_y <= 7;
+			Head_X <= 7;   // roughly center (0..14)
+			Head_Y <= 7;
 			body_x <= 6;   // one tile behind
 			body_y <= 7;
 			// moveUp <= 1'b0;
 		end
-		else if (clk) begin
+		// else if (clk) begin
 		
-		/* Note that the top left of the screen does NOT correlate to vCount=0 and hCount=0. The display_controller.v file has the 
-			synchronizing pulses for both the horizontal sync and the vertical sync begin at vcount=0 and hcount=0. Recall that after 
-			the length of the pulse, there is also a short period called the back porch before the display area begins. So effectively, 
-			the top left corner corresponds to (hcount,vcount)~(144,35). Which means with a 640x480 resolution, the bottom right corner 
-			corresponds to ~(783,515).  
-		*/
+		// /* Note that the top left of the screen does NOT correlate to vCount=0 and hCount=0. The display_controller.v file has the 
+		// 	synchronizing pulses for both the horizontal sync and the vertical sync begin at vcount=0 and hcount=0. Recall that after 
+		// 	the length of the pulse, there is also a short period called the back porch before the display area begins. So effectively, 
+		// 	the top left corner corresponds to (hcount,vcount)~(144,35). Which means with a 640x480 resolution, the bottom right corner 
+		// 	corresponds to ~(783,515).  
+		// */
 
-			if(right) begin
-				body_x <= head_x;
-        		body_y <= head_y;
-				head_x <= (head_x == GRID_SIZE-1) ? 0 : head_x + 1;
-			end
-			else if(left) begin
-				body_x <= head_x;
-        		body_y <= head_y;
-				head_x <= (head_x == 0) ? GRID_SIZE-1 : head_x - 1;
-			end
-			else if(up) begin
-				body_x <= head_x;
-       			body_y <= head_y;	
-				head_y <= (head_y == 0) ? GRID_SIZE-1 : head_y - 1;
-			end
-			else if(down) begin
-				body_x <= head_x;
-        		body_y <= head_y;
-				head_y <= (head_y == GRID_SIZE-1) ? 0 : head_y + 1;
-			end
+		// 	if(right) begin
+		// 		body_x <= Head_X;
+        // 		body_y <= Head_Y;
+		// 		Head_X <= (Head_X == GRID_SIZE-1) ? 0 : Head_X + 1;
+		// 	end
+		// 	else if(left) begin
+		// 		body_x <= Head_X;
+        // 		body_y <= Head_Y;
+		// 		Head_X <= (Head_X == 0) ? GRID_SIZE-1 : Head_X - 1;
+		// 	end
+		// 	else if(up) begin
+		// 		body_x <= Head_X;
+       	// 		body_y <= Head_Y;	
+		// 		Head_Y <= (Head_Y == 0) ? GRID_SIZE-1 : Head_Y - 1;
+		// 	end
+		// 	else if(down) begin
+		// 		body_x <= Head_X;
+        // 		body_y <= Head_Y;
+		// 		Head_Y <= (Head_Y == GRID_SIZE-1) ? 0 : Head_Y + 1;
+		// 	end
 		end
-	end
 	
 	//the background color reflects the most recent button press
 	always@(posedge clk, posedge rst) begin

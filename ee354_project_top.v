@@ -137,6 +137,23 @@ module ee354_project_top(
         .Apple_Y(Apple_Y)
     );
 	
+	output hSync, vSync; 
+	output [3:0] vgaR, vgaG, vgaB;
+	output QuadSpiFlashCS;
+
+	wire bright;
+	wire [9:0] hCount, vCount;
+	wire [11:0] rgb;
+	wire [11:0] background;
+
+	display_controller dc(.clk(ClkPort), .hSync(hSync), .vSync(vSync), .bright(bright), .hCount(hCount), .vCount(vCount));
+	block_controller bc(.clk(Speed_Clk), .mastClk(ClkPort), .bright(bright), .rst(Reset), .hCount(hCount), .vCount(vCount), .Head_X(Head_X), .Head_Y(Head_Y), .Tail_X(Tail_X), .Tail_Y(Tail_Y), .Apple_X(Apple_X), .Apple_Y(Apple_Y), .Cell_Snake_Vector(Cell_Snake_Vector), .rgb(rgb), .background(background));
+
+	assign vgaR = rgb[11 : 8];
+	assign vgaG = rgb[7  : 4];
+	assign vgaB = rgb[3  : 0];
+	assign QuadSpiFlashCS = 1'b1;
+
 	// Clock division segment
 	// BUFGP is a Xilinx primitive; for simulation, use simple wire assignment (uncomment BUFGP instantiation below for synthesis/FPGA implementation)
 	// BUFGP BUFGP1 (board_clk, ClkPort);
