@@ -6,19 +6,19 @@
 // Clock division segment not done.
 
 module ee354_project_top(
-	input ClkPort,                           // the 100 MHz incoming clock signal	
-	input BtnL, BtnU, BtnD, BtnR,            // the Left, Up, Down, and the Right buttons (Direction buttons)
-	input BtnC,                              // the Center button (Reset)
+	ClkPort,                           // the 100 MHz incoming clock signal	
+	BtnL, BtnU, BtnD, BtnR,            // the Left, Up, Down, and the Right buttons (Direction buttons)
+	BtnC,                              // the Center button (Reset)
 	// Sw7, Sw6, Sw5, Sw4, Sw3, Sw2, Sw1, Sw0, // 8 switches (that we are not using)
 	// Ld7, Ld6, Ld5, Ld4,
-	input Ld3, Ld2, Ld1, Ld0, // 8 LEDs (that we will use to show states. Only 4 will be used since we only have 4 states)
-	input An7, An6, An5, An4, An3, An2, An1, An0,	// 8 anodes (for SSD to show apple count. Probably won't need all.)
-	input Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes (for SSD to show apple count)
-	input Dp , // Dot Point Cathode on SSDs (will be disabling in code later)
+	Ld3, Ld2, Ld1, Ld0, // 8 LEDs (that we will use to show states. Only 4 will be used since we only have 4 states)
+	An7, An6, An5, An4, An3, An2, An1, An0,	// 8 anodes (for SSD to show apple count. Probably won't need all.)
+	Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes (for SSD to show apple count)
+	Dp , // Dot Point Cathode on SSDs (will be disabling in code later)
 	
-	output hSync, vSync,
-	output [3:0] vgaR, vgaG, vgaB,
-	output QuadSpiFlashCS
+	hSync, vSync,
+	vgaR, vgaG, vgaB,
+	QuadSpiFlashCS
 );
 
 	//  INPUTS
@@ -35,6 +35,9 @@ module ee354_project_top(
 	output 	Cg, Cf, Ce, Cd, Cc, Cb, Ca, Dp;
 	output 	An0, An1, An2, An3;	
 	output 	An4, An5, An6, An7;
+	output hSync, vSync;
+	output [3:0] vgaR, vgaG, vgaB;
+	output QuadSpiFlashCS;
 
 	//  LOCAL SIGNALS
 	wire		Reset;
@@ -146,6 +149,7 @@ module ee354_project_top(
 	wire [9:0] hCount, vCount;
 	wire [11:0] rgb;
 	wire [11:0] background;
+	assign background = 12'b1111_1111_1111; // white background
 
 	display_controller dc(.clk(ClkPort), .hSync(hSync), .vSync(vSync), .bright(bright), .hCount(hCount), .vCount(vCount));
 	block_controller bc(.clk(Speed_Clk), .mastClk(ClkPort), .bright(bright), .rst(Reset), .hCount(hCount), .vCount(vCount), .Head_X(Head_X), .Head_Y(Head_Y), .Tail_X(Tail_X), .Tail_Y(Tail_Y), .Apple_X(Apple_X), .Apple_Y(Apple_Y), .Cell_Snake_Vector(Cell_Snake_Vector), .rgb(rgb), .background(background));
