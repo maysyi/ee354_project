@@ -29,8 +29,11 @@ module ee354_project_apples(Clk, SCEN, Reset, Cell_Snake_Vector, New_Apple, Appl
                 end
         end
     
-    wire [3:0] LFSR_X = LFSR[7:4] % 15;
-    wire [3:0] LFSR_Y = LFSR[3:0] % 15;
+    wire [3:0] nibble_x = LFSR[7:4];
+    wire [3:0] nibble_y = LFSR[3:0];
+
+    wire [3:0] LFSR_X = (nibble_x == 4'd15) ? 4'd0 : nibble_x;
+    wire [3:0] LFSR_Y = (nibble_y == 4'd15) ? 4'd0 : nibble_y;
 
     wire Cell_Check = Cell_Snake_Vector[LFSR_X*15 + LFSR_Y]; // Checks if generated apple location is where snake is
 
@@ -79,6 +82,19 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
     reg [7:0] Cell_Snake [0:224]; // Internal storage of snake parts
     integer i;
 
+    function [7:0] XY_to_idx;
+        input [3:0] x;
+        input [3:0] y;
+        begin
+            XY_to_idx = x * 8'd15 + y;
+        end
+    endfunction
+
+    wire [7:0] head_ptr_plus1 =
+                            (Head_Ptr == 8'd224) ? 8'd0 : (Head_Ptr + 8'd1);
+
+    wire [7:0] tail_ptr_plus1 =
+                            (Tail_Ptr == 8'd224) ? 8'd0 : (Tail_Ptr + 8'd1);
     // Update Head and Tail
     always @(posedge Clk, posedge Reset) 
     begin
@@ -113,7 +129,11 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                 
                 if (Speed_Clk)
                 begin
-                    // Update next location of head (note blocking assignment)
+                    // Start from current head position
+                    Next_Head_X = Head_X;
+                    Next_Head_Y = Head_Y;
+
+                    // Update next location of head
                     case (Current_Dirn)
                         2'b00: // UP
                             Next_Head_Y = Head_Y + 4'h1;
@@ -128,8 +148,9 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                     // If apple eaten (add head but don't remove tail)
                     if ((Next_Head_X == Apple_X) && (Next_Head_Y == Apple_Y))
                     begin
-                        Head_Ptr <= (Head_Ptr + 8'h01) % 225; // Loops back to 0 when exceeds 225
-                        Cell_Snake[(Head_Ptr + 8'h01) % 225] <= {Next_Head_X, Next_Head_Y};
+                        
+                        Cell_Snake[head_ptr_plus1] <= {Next_Head_X, Next_Head_Y};
+                        Head_Ptr <= head_ptr_plus1;
                         Head_X <= Next_Head_X;
                         Head_Y <= Next_Head_Y;
                         Length <= Length + 8'h01;
@@ -138,14 +159,14 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                     // If apple not eaten (just continue moving)
                     else 
                     begin
-                        Head_Ptr <= (Head_Ptr + 8'h01) % 225; // Loops back to 0 when exceeds 225
-                        Cell_Snake[(Head_Ptr + 8'h01) % 225] <= {Next_Head_X, Next_Head_Y};
+                        Cell_Snake[head_ptr_plus1] <= {Next_Head_X, Next_Head_Y};
+                        Head_Ptr <= head_ptr_plus1;
                         Head_X <= Next_Head_X;
                         Head_Y <= Next_Head_Y;
-                        Tail_Ptr <= (Tail_Ptr + 8'h01) % 225;
+                        Tail_Ptr <= tail_ptr_plus1;
                         Cell_Snake[Tail_Ptr] <= 8'hFF; // Mark old tail as empty
-                        Tail_X <= Cell_Snake[(Tail_Ptr + 8'h01) % 225][7:4]; // Extract X from new tail
-                        Tail_Y <= Cell_Snake[(Tail_Ptr + 8'h01) % 225][3:0]; // Extract Y from new tail 
+                        Tail_X <= Cell_Snake[tail_ptr_plus1][7:4]; // Extract X from new tail
+                        Tail_Y <= Cell_Snake[tail_ptr_plus1][3:0]; // Extract Y from new tail 
                         New_Apple <= 0;                   
                     end
 
@@ -153,26 +174,19 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                     if ((Next_Head_X > 4'hE) || (Next_Head_Y > 4'hE)) begin
                         Collision <= 1;
                     end else begin
-                        for (i=0; i<225; i=i+1)
-                        begin
-                            if (Cell_Snake[i] != 8'hFF) // If this segment exists
-                            begin
-                                if ((Cell_Snake[i][7:4] == Next_Head_X) && (Cell_Snake[i][3:0] == Next_Head_Y))
-                                begin
-                                    Collision <= 1;
-                                end
-                            end
-                        end
+                        if (Cell_Snake_Vector[XY_to_idx(Next_Head_X, Next_Head_Y)])
+                            Collision <= 1;
                     end
 
                     // Recompute occupancy vector after movement
+                    // Update occupancy vector after movement
                     begin : recompute_vector
-                        integer j;
-                        Cell_Snake_Vector = 225'd0;
-                        for (j = 0; j < 225; j = j + 1) begin
-                            if (Cell_Snake[j] != 8'hFF) begin
-                                Cell_Snake_Vector[Cell_Snake[j][7:4]*15 + Cell_Snake[j][3:0]] = 1'b1;
-                            end
+                        // Mark new head tile as occupied
+                        Cell_Snake_Vector[XY_to_idx(Next_Head_X, Next_Head_Y)] <= 1'b1;
+
+                        // If we did NOT just eat an apple, clear the old tail tile
+                        if (!((Next_Head_X == Apple_X) && (Next_Head_Y == Apple_Y))) begin
+                            Cell_Snake_Vector[XY_to_idx(Tail_X, Tail_Y)] <= 1'b0;
                         end
                     end
                 end

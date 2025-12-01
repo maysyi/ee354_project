@@ -152,8 +152,8 @@ module ee354_project_top(
 	assign background = 12'b1111_1111_1111; // white background
 
 	display_controller dc(.clk(ClkPort), .hSync(hSync), .vSync(vSync), .bright(bright), .hCount(hCount), .vCount(vCount));
-	block_controller bc(.clk(Speed_Clk), .mastClk(ClkPort), .bright(bright), .rst(Reset), .hCount(hCount), .vCount(vCount), .Head_X(Head_X), .Head_Y(Head_Y), .Tail_X(Tail_X), .Tail_Y(Tail_Y), .Apple_X(Apple_X), .Apple_Y(Apple_Y), .Cell_Snake_Vector(Cell_Snake_Vector), .rgb(rgb), .background(background));
-
+	block_controller bc( .mastClk(ClkPort), .bright(bright), .rst(Reset), .hCount(hCount), .vCount(vCount), .Head_X(Head_X), .Head_Y(Head_Y), .Tail_X(Tail_X), .Tail_Y(Tail_Y), .Apple_X(Apple_X), .Apple_Y(Apple_Y), .Cell_Snake_Vector(Cell_Snake_Vector), .rgb(rgb), .background(background));
+// .clk(Speed_Clk) FROM BC
 	assign vgaR = rgb[11 : 8];
 	assign vgaG = rgb[7  : 4];
 	assign vgaB = rgb[3  : 0];
