@@ -82,7 +82,7 @@ module ee354_project_tb();
 		$display("  Button released");
 		#400000000;
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
-		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)\n");
+		$display("  EXPECTED: Ld3=0, Ld2=0, Ld1=1, Ld0=0 (Lose state)\n");
 
 		// Test 4: Long Running Simulation
 		test_num = test_num + 1;

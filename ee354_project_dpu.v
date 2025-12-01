@@ -95,6 +95,14 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
 
     wire [7:0] tail_ptr_plus1 =
                             (Tail_Ptr == 8'd224) ? 8'd0 : (Tail_Ptr + 8'd1);
+
+    always @(*)
+    begin
+        if (SCEN) // When button pressed
+            // Update current direction
+            Current_Dirn <= In_Dirn;
+    end
+    
     // Update Head and Tail
     always @(posedge Speed_Clk, posedge Reset) 
     begin
@@ -123,9 +131,9 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
             end
         else if (q_Run) // Need to add conditional state requirement
             begin
-                if (SCEN) // When button pressed
-                    // Update current direction
-                    Current_Dirn <= In_Dirn;
+                // if (SCEN) // When button pressed
+                //     // Update current direction
+                //     Current_Dirn <= In_Dirn;
                 
                 // Start from current head position
                 Next_Head_X = Head_X;
