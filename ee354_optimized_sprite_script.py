@@ -104,3 +104,6 @@ def generate(name, rem_x=-1, rem_y=-1):
 
 # generate rom from full bitmap image
 generate("Assets/apple.png")
+generate("Assets/snakeBody.png")
+generate("Assets/snakeHead.png")
+generate("Assets/bg.jpg")
