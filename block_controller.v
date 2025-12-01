@@ -25,8 +25,15 @@ module block_controller(
 
 	localparam CELL_SIZE = 30;
 	localparam GRID_SIZE = 15;
-	localparam H_OFFSET  = (640 - GRID_SIZE*CELL_SIZE)/2;
-	localparam V_OFFSET  = (480 - GRID_SIZE*CELL_SIZE)/2;
+	localparam H_CENTER  = (640 - GRID_SIZE*CELL_SIZE)/2;
+	localparam V_CENTER  = (480 - GRID_SIZE*CELL_SIZE)/2;
+
+	localparam integer SHIFT_X = 2;
+	localparam integer SHIFT_Y = 1;
+
+	localparam integer H_OFFSET = H_CENTER + SHIFT_X*CELL_SIZE;
+	localparam integer V_OFFSET = V_CENTER + SHIFT_Y*CELL_SIZE;
+
 
 	wire in_grid_x = (hCount >= H_OFFSET) &&
                      (hCount <  H_OFFSET + GRID_SIZE*CELL_SIZE);
