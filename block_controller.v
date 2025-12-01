@@ -31,13 +31,18 @@ module block_controller(
 	wire body_fill;
 
 	//pull from top file later 
-	localparam [9:0] APPLE_X = 300;
-    localparam [9:0] APPLE_Y = 200;
+
+	// Apple in tile coords (which cell it's in)
+	reg [3:0] apple_x = 4'd10;  // choose any 0–14
+	reg [3:0] apple_y = 4'd4;   // choose any 0–14
 
 	localparam CELL_SIZE = 30;
 	localparam GRID_SIZE = 15;
 	localparam H_OFFSET  = (640 - GRID_SIZE*CELL_SIZE)/2;
 	localparam V_OFFSET  = (480 - GRID_SIZE*CELL_SIZE)/2;
+
+	wire [9:0] APPLE_X_POS = H_OFFSET + apple_x * CELL_SIZE;
+	wire [9:0] APPLE_Y_POS = V_OFFSET + apple_y * CELL_SIZE;
 
 	wire in_grid_x = (hCount >= H_OFFSET) &&
                      (hCount <  H_OFFSET + GRID_SIZE*CELL_SIZE);
