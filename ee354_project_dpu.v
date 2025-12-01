@@ -106,7 +106,7 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
     // Direction register lives in sys_clk domain
     always @(posedge Clk or posedge Reset) begin
         if (Reset) begin
-            Current_Dirn <= 2'b01;  // e.g. UP
+            Current_Dirn <= 2'b01;  // e.g. DOWN
         end else if (SCEN) begin
             // Debounced pulse: capture the new direction immediately
             Current_Dirn <= In_Dirn;
