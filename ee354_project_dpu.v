@@ -96,7 +96,7 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
     wire [7:0] tail_ptr_plus1 =
                             (Tail_Ptr == 8'd224) ? 8'd0 : (Tail_Ptr + 8'd1);
     // Update Head and Tail
-    always @(posedge Clk, posedge Reset) 
+    always @(posedge Speed_Clk, posedge Reset) 
     begin
         if (Reset)
             begin
@@ -127,67 +127,64 @@ module ee354_project_length(Clk, SCEN, Reset, Speed_Clk, q_I, q_Run, q_Win, q_Lo
                     // Update current direction
                     Current_Dirn <= In_Dirn;
                 
-                if (Speed_Clk)
+                // Start from current head position
+                Next_Head_X = Head_X;
+                Next_Head_Y = Head_Y;
+
+                // Update next location of head
+                case (Current_Dirn)
+                    2'b00: // UP
+                        Next_Head_Y = Head_Y + 4'h1;
+                    2'b01: // DOWN
+                        Next_Head_Y = Head_Y - 4'h1; 
+                    2'b10: // LEFT
+                        Next_Head_X = Head_X - 4'h1; 
+                    2'b11: // RIGHT
+                        Next_Head_X = Head_X + 4'h1; 
+                endcase
+
+                // If apple eaten (add head but don't remove tail)
+                if ((Next_Head_X == Apple_X) && (Next_Head_Y == Apple_Y))
                 begin
-                    // Start from current head position
-                    Next_Head_X = Head_X;
-                    Next_Head_Y = Head_Y;
+                    
+                    Cell_Snake[head_ptr_plus1] <= {Next_Head_X, Next_Head_Y};
+                    Head_Ptr <= head_ptr_plus1;
+                    Head_X <= Next_Head_X;
+                    Head_Y <= Next_Head_Y;
+                    Length <= Length + 8'h01;
+                    New_Apple <= 1;
+                end
+                // If apple not eaten (just continue moving)
+                else 
+                begin
+                    Cell_Snake[head_ptr_plus1] <= {Next_Head_X, Next_Head_Y};
+                    Head_Ptr <= head_ptr_plus1;
+                    Head_X <= Next_Head_X;
+                    Head_Y <= Next_Head_Y;
+                    Tail_Ptr <= tail_ptr_plus1;
+                    Cell_Snake[Tail_Ptr] <= 8'hFF; // Mark old tail as empty
+                    Tail_X <= Cell_Snake[tail_ptr_plus1][7:4]; // Extract X from new tail
+                    Tail_Y <= Cell_Snake[tail_ptr_plus1][3:0]; // Extract Y from new tail 
+                    New_Apple <= 0;                   
+                end
 
-                    // Update next location of head
-                    case (Current_Dirn)
-                        2'b00: // UP
-                            Next_Head_Y = Head_Y + 4'h1;
-                        2'b01: // DOWN
-                            Next_Head_Y = Head_Y - 4'h1; 
-                        2'b10: // LEFT
-                            Next_Head_X = Head_X - 4'h1; 
-                        2'b11: // RIGHT
-                            Next_Head_X = Head_X + 4'h1; 
-                    endcase
-
-                    // If apple eaten (add head but don't remove tail)
-                    if ((Next_Head_X == Apple_X) && (Next_Head_Y == Apple_Y))
-                    begin
-                        
-                        Cell_Snake[head_ptr_plus1] <= {Next_Head_X, Next_Head_Y};
-                        Head_Ptr <= head_ptr_plus1;
-                        Head_X <= Next_Head_X;
-                        Head_Y <= Next_Head_Y;
-                        Length <= Length + 8'h01;
-                        New_Apple <= 1;
-                    end
-                    // If apple not eaten (just continue moving)
-                    else 
-                    begin
-                        Cell_Snake[head_ptr_plus1] <= {Next_Head_X, Next_Head_Y};
-                        Head_Ptr <= head_ptr_plus1;
-                        Head_X <= Next_Head_X;
-                        Head_Y <= Next_Head_Y;
-                        Tail_Ptr <= tail_ptr_plus1;
-                        Cell_Snake[Tail_Ptr] <= 8'hFF; // Mark old tail as empty
-                        Tail_X <= Cell_Snake[tail_ptr_plus1][7:4]; // Extract X from new tail
-                        Tail_Y <= Cell_Snake[tail_ptr_plus1][3:0]; // Extract Y from new tail 
-                        New_Apple <= 0;                   
-                    end
-
-                    // Check for wall or body collision
-                    if ((Next_Head_X > 4'hE) || (Next_Head_Y > 4'hE)) begin
+                // Check for wall or body collision
+                if ((Next_Head_X > 4'hE) || (Next_Head_Y > 4'hE)) begin
+                    Collision <= 1;
+                end else begin
+                    if (Cell_Snake_Vector[XY_to_idx(Next_Head_X, Next_Head_Y)])
                         Collision <= 1;
-                    end else begin
-                        if (Cell_Snake_Vector[XY_to_idx(Next_Head_X, Next_Head_Y)])
-                            Collision <= 1;
-                    end
+                end
 
-                    // Recompute occupancy vector after movement
-                    // Update occupancy vector after movement
-                    begin : recompute_vector
-                        // Mark new head tile as occupied
-                        Cell_Snake_Vector[XY_to_idx(Next_Head_X, Next_Head_Y)] <= 1'b1;
+                // Recompute occupancy vector after movement
+                // Update occupancy vector after movement
+                begin : recompute_vector
+                    // Mark new head tile as occupied
+                    Cell_Snake_Vector[XY_to_idx(Next_Head_X, Next_Head_Y)] <= 1'b1;
 
-                        // If we did NOT just eat an apple, clear the old tail tile
-                        if (!((Next_Head_X == Apple_X) && (Next_Head_Y == Apple_Y))) begin
-                            Cell_Snake_Vector[XY_to_idx(Tail_X, Tail_Y)] <= 1'b0;
-                        end
+                    // If we did NOT just eat an apple, clear the old tail tile
+                    if (!((Next_Head_X == Apple_X) && (Next_Head_Y == Apple_Y))) begin
+                        Cell_Snake_Vector[XY_to_idx(Tail_X, Tail_Y)] <= 1'b0;
                     end
                 end
             end
