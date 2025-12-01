@@ -122,3 +122,15 @@ set_property PACKAGE_PIN H14 [get_ports MemOE]
 set_property PACKAGE_PIN R11 [get_ports MemWR]					
 	set_property IOSTANDARD LVCMOS33 [get_ports MemWR]
 
+## LEDs (LD0–LD3)
+set_property PACKAGE_PIN H17 [get_ports {Ld0}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {Ld0}]
+    
+set_property PACKAGE_PIN K15 [get_ports {Ld1}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {Ld1}]
+    
+set_property PACKAGE_PIN J13 [get_ports {Ld2}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {Ld2}]        
+
+set_property PACKAGE_PIN N14 [get_ports {Ld3}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {Ld3}]

@@ -1,2 +1,4 @@
 .DS_Store
-/ee354_project_vivado
+ee354_project_vivado/
+chat.txt
+.vscode/
