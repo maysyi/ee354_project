@@ -15,7 +15,7 @@ module block_controller(
 	
 	//these two values dictate the center of the block, incrementing and decrementing them leads the block to move in certain directions
 	// reg[3:0] Head_X, Head_Y;
-	// reg[3:0] body_x, body_y;
+	// reg[3:0] Tail_X, Tail_Y;
 	wire [9:0] xHeadPos;
 	wire [9:0] yHeadPos;
 	wire [9:0] xBodyPos;
@@ -73,8 +73,8 @@ module block_controller(
 	assign xHeadPos = H_OFFSET + Head_X * CELL_SIZE;
 	assign yHeadPos = V_OFFSET + Head_Y * CELL_SIZE;
 
-	assign xBodyPos = H_OFFSET + body_x * CELL_SIZE;
-	assign yBodyPos = V_OFFSET + body_y * CELL_SIZE;
+	assign xBodyPos = H_OFFSET + Tail_X * CELL_SIZE;
+	assign yBodyPos = V_OFFSET + Tail_Y * CELL_SIZE;
 
 
 	// apple_rom ar(.clk(mastClk), .row(vCount-APPLE_Y_POS), .col(hCount-APPLE_X_POS), .color_data(apple_color));
@@ -112,17 +112,17 @@ module block_controller(
 	end
 		//the +-5 for the positions give the dimension of the block (i.e. it will be 10x10 pixels)
 	
-	always@(posedge clk, posedge rst) 
-	begin
-		if(rst)
-		begin 
-			//rough values for center of screen
-			Head_X <= 7;   // roughly center (0..14)
-			Head_Y <= 7;
-			body_x <= 6;   // one tile behind
-			body_y <= 7;
-			// moveUp <= 1'b0;
-		end
+	// always@(posedge clk, posedge rst) 
+	// begin
+	// 	if(rst)
+	// 	begin 
+	// 		//rough values for center of screen
+	// 		Head_X <= 7;   // roughly center (0..14)
+	// 		Head_Y <= 7;
+	// 		Tail_X <= 6;   // one tile behind
+	// 		Tail_Y <= 7;
+	// 		// moveUp <= 1'b0;
+	// 	end
 		// else if (clk) begin
 		
 		// /* Note that the top left of the screen does NOT correlate to vCount=0 and hCount=0. The display_controller.v file has the 
@@ -133,41 +133,41 @@ module block_controller(
 		// */
 
 		// 	if(right) begin
-		// 		body_x <= Head_X;
-        // 		body_y <= Head_Y;
+		// 		Tail_X <= Head_X;
+        // 		Tail_Y <= Head_Y;
 		// 		Head_X <= (Head_X == GRID_SIZE-1) ? 0 : Head_X + 1;
 		// 	end
 		// 	else if(left) begin
-		// 		body_x <= Head_X;
-        // 		body_y <= Head_Y;
+		// 		Tail_X <= Head_X;
+        // 		Tail_Y <= Head_Y;
 		// 		Head_X <= (Head_X == 0) ? GRID_SIZE-1 : Head_X - 1;
 		// 	end
 		// 	else if(up) begin
-		// 		body_x <= Head_X;
-       	// 		body_y <= Head_Y;	
+		// 		Tail_X <= Head_X;
+       	// 		Tail_Y <= Head_Y;	
 		// 		Head_Y <= (Head_Y == 0) ? GRID_SIZE-1 : Head_Y - 1;
 		// 	end
 		// 	else if(down) begin
-		// 		body_x <= Head_X;
-        // 		body_y <= Head_Y;
+		// 		Tail_X <= Head_X;
+        // 		Tail_Y <= Head_Y;
 		// 		Head_Y <= (Head_Y == GRID_SIZE-1) ? 0 : Head_Y + 1;
 		// 	end
-		end
+
 	
 	//the background color reflects the most recent button press
-	always@(posedge clk, posedge rst) begin
-		if(rst)
-			background <= 12'b1111_1111_1111;
-		else 
-			if(right)
-				background <= 12'b1111_1111_0000;
-			else if(left)
-				background <= 12'b0000_1111_1111;
-			else if(down)
-				background <= 12'b0000_1111_0000;
-			else if(up)
-				background <= 12'b0000_0000_1111;
-	end
+	// always@(posedge clk, posedge rst) begin
+	// 	if(rst)
+	// 		background <= 12'b1111_1111_1111;
+	// 	else 
+	// 		if(right)
+	// 			background <= 12'b1111_1111_0000;
+	// 		else if(left)
+	// 			background <= 12'b0000_1111_1111;
+	// 		else if(down)
+	// 			background <= 12'b0000_1111_0000;
+	// 		else if(up)
+	// 			background <= 12'b0000_0000_1111;
+	// end
 
 	
 	

@@ -6,15 +6,19 @@
 // Clock division segment not done.
 
 module ee354_project_top(
-	ClkPort,                           // the 100 MHz incoming clock signal	
-	BtnL, BtnU, BtnD, BtnR,            // the Left, Up, Down, and the Right buttons (Direction buttons)
-	BtnC,                              // the Center button (Reset)
+	input ClkPort,                           // the 100 MHz incoming clock signal	
+	input BtnL, BtnU, BtnD, BtnR,            // the Left, Up, Down, and the Right buttons (Direction buttons)
+	input BtnC,                              // the Center button (Reset)
 	// Sw7, Sw6, Sw5, Sw4, Sw3, Sw2, Sw1, Sw0, // 8 switches (that we are not using)
 	// Ld7, Ld6, Ld5, Ld4,
-	Ld3, Ld2, Ld1, Ld0, // 8 LEDs (that we will use to show states. Only 4 will be used since we only have 4 states)
-	An7, An6, An5, An4, An3, An2, An1, An0,	// 8 anodes (for SSD to show apple count. Probably won't need all.)
-	Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes (for SSD to show apple count)
-	Dp                                 // Dot Point Cathode on SSDs (will be disabling in code later)
+	input Ld3, Ld2, Ld1, Ld0, // 8 LEDs (that we will use to show states. Only 4 will be used since we only have 4 states)
+	input An7, An6, An5, An4, An3, An2, An1, An0,	// 8 anodes (for SSD to show apple count. Probably won't need all.)
+	input Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes (for SSD to show apple count)
+	input Dp , // Dot Point Cathode on SSDs (will be disabling in code later)
+	
+	output hSync, vSync,
+	output [3:0] vgaR, vgaG, vgaB,
+	output QuadSpiFlashCS
 );
 
 	//  INPUTS
@@ -137,9 +141,6 @@ module ee354_project_top(
         .Apple_Y(Apple_Y)
     );
 	
-	output hSync, vSync; 
-	output [3:0] vgaR, vgaG, vgaB;
-	output QuadSpiFlashCS;
 
 	wire bright;
 	wire [9:0] hCount, vCount;
