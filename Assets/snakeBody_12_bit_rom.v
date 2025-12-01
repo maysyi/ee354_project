@@ -1,4 +1,4 @@
-module Assets/snakeBody_rom
+module snakeBody_rom
 	(
 		input wire clk,
 		input wire [4:0] row,

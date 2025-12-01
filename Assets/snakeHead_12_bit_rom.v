@@ -1,4 +1,4 @@
-module Assets/snakeHead_rom
+module snakeHead_rom
 	(
 		input wire clk,
 		input wire [4:0] row,

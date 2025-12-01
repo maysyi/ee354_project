@@ -1,4 +1,4 @@
-module Assets/apple_rom
+module apple_rom
 	(
 		input wire clk,
 		input wire [4:0] row,
