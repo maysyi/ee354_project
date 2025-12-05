@@ -88,7 +88,7 @@ module ee354_project_tb();
 		test_num = test_num + 1;
 		$display("Test %0d: Long Running Simulation", test_num);
 		$display("  Running simulation...");
-		#800000000;  // 0.4 + 0.8 seconds (safe margin for 7 moves)
+		#1100000000;  // 0.4 + 1.1 seconds (safe margin for 9 moves)
 		$display("  Simulation complete");
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
 		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)\n");
@@ -116,11 +116,11 @@ module ee354_project_tb();
 		test_num = test_num + 1;
 		$display("Test %0d: Move down", test_num);
 		$display("  Pressing down button...");
-		BtnD = 1'b1;
+		BtnU = 1'b1;
 		@(posedge ClkPort);
-		BtnD = 1'b0;
+		BtnU = 1'b0;
 		$display("  Button released");
-		#180000000; // Wait sufficient time for snake to collide with itself
+		#300000000; // Wait sufficient time for snake to collide with itself
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
 		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)");	
 		
