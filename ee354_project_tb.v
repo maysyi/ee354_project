@@ -76,7 +76,7 @@ module ee354_project_tb();
 		$display("Test %0d: Move right", test_num);
 		$display("  Pressing right button...");
 		BtnR = 1'b1;
-		@(posedge ClkPort);
+		#90000000; // Hold button for 90 ms to enable debouncing
 		BtnR = 1'b0;
 		@(posedge ClkPort);
 		$display("  Button released");
@@ -88,7 +88,7 @@ module ee354_project_tb();
 		test_num = test_num + 1;
 		$display("Test %0d: Long Running Simulation", test_num);
 		$display("  Running simulation...");
-		#1100000000;  // 0.4 + 1.1 seconds (safe margin for 9 moves)
+		#2400000000;  // Each clock cycle is around 340 ms. Safe margin for 8 moves is 2.72 s)
 		$display("  Simulation complete");
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
 		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)\n");
@@ -98,9 +98,8 @@ module ee354_project_tb();
 		$display("Test %0d: Lose and Initial State", test_num);
 		$display("  Applying reset...");
 		BtnC = 1'b1;
-		@(posedge ClkPort);
+		#90000000;
 		BtnC = 1'b0;
-		@(posedge ClkPort);
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
 		$display("  EXPECTED: Ld3=0, Ld2=0, Ld1=0, Ld0=1 (Initial state)\n");
 
@@ -108,19 +107,26 @@ module ee354_project_tb();
 		test_num = test_num + 1;
 		$display("Test %0d: Initial to run state", test_num);
 		$display("  Waiting for state transition...");
-		@(posedge ClkPort);
+		#90000000;
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
 		$display("  EXPECTED: Ld3=0, Ld2=0, Ld1=1, Ld0=0 (Run state)\n");	
 
-		// Test 7: Move down to lose
+		// Test 7: Move right and left to lose
 		test_num = test_num + 1;
-		$display("Test %0d: Move down", test_num);
-		$display("  Pressing down button...");
-		BtnU = 1'b1;
-		@(posedge ClkPort);
-		BtnU = 1'b0;
+		$display("Test %0d: Move right and left to lose", test_num);
+		$display("  Pressing right button...");
+		BtnR = 1'b1;
+		#90000000;
+		BtnR = 1'b0;
 		$display("  Button released");
-		#300000000; // Wait sufficient time for snake to collide with itself
+		#400000000; // Wait for snake to start moving right;
+		@(posedge ClkPort);
+		$display("  Pressing left button...");
+		BtnL = 1'b1;
+		#90000000;
+		BtnL = 1'b0;
+		$display("  Button released");
+		#400000000; // Wait for snake to collide with itself
 		$display("  TEST:     Ld3=%b, Ld2=%b, Ld1=%b, Ld0=%b", Ld3, Ld2, Ld1, Ld0);
 		$display("  EXPECTED: Ld3=0, Ld2=1, Ld1=0, Ld0=0 (Lose state)");	
 		
